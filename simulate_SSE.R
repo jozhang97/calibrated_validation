@@ -40,6 +40,8 @@ sim.sse <- function(output.dir, prefix, pars, is.classe=TRUE) {
   save.path = paste(output.dir, prefix, sep = "/")
   write.tips(states, file.name=paste(save.path, "tips.csv", sep = "_"))
   write.tree(phy, file=paste(save.path, ".tree", sep = ""))
+  write.table(params.df, file=save.path, 
+              row.names=FALSE, col.names=FALSE, eol=",")
 }
 
 
