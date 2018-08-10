@@ -35,12 +35,17 @@ sim.sse <- function(output.dir, prefix, pars, is.classe=TRUE) {
     phy = tree.bisse(pars, max.t=22, max.taxa=Inf, 
                include.extinct=FALSE, x0=NA)  
   }
+  if (is.null(phy)) {
+    print(pars)
+    print("Probably extinction rates are too high compared to speciation rates.")
+    return
+  }
   states = phy$tip.state
   
   save.path = paste(output.dir, prefix, sep = "/")
   write.tips(states, file.name=paste(save.path, "tips.csv", sep = "_"))
   write.tree(phy, file=paste(save.path, ".tree", sep = ""))
-  write.table(params.df, file=save.path, 
+  write.table(pars, file=save.path, 
               row.names=FALSE, col.names=FALSE, eol=",")
 }
 

@@ -52,7 +52,7 @@ sample.parameters <- function(output.dir, prefix, n.sim, param.names) {
   save.path = paste(output.dir, prefix, sep = "/")
   save.path = paste(save.path, "params.csv", sep="_")
   
-  write.table(params.df, file=save.path, 
+  write.table(params.df, file=save.path, sep=",",
               row.names=FALSE, col.names=FALSE)
   # This csv has all of the parameters for all the simulations together to be used by next script.
   # It should not be used for any other purposes

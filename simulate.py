@@ -13,6 +13,7 @@ FLAGS(sys.argv)
 path="/Users/jeff/Documents/Research/Phylogenetics/calibrated_validation"
 path_param = path + "/simulate_params.R"
 path_sse = path + "/simulate_SSE.R"
+call_sse = ["Rscript", "--vanilla", path_sse, FLAGS.save_dir, FLAGS.run_name]
 
 
 subprocess.call (["Rscript", "--vanilla", path_param, FLAGS.save_dir,
@@ -22,16 +23,9 @@ path = os.path.join(FLAGS.save_dir, FLAGS.run_name)
 with open(path + '_params.csv') as csv_file:
   csv_reader = csv.reader(csv_file, delimiter=',')
   import ipdb; ipdb.set_trace()
-  line_count = 0
-  for row in csv_reader:
-    if line_count == 0:
-      line_count += 1
-    else:
-      print(f'\t{row[0]} works in the {row[1]} department, and was born in {row[2]}.')
-      line_count += 1
-      print(f'Processed {line_count} lines.')
+  for i, row in enumerate(csv_reader):
+    print(f'\t{row[0]} works in the {row[1]} department, and was born in {row[2]}.')
+    call = call_sse + row
+    call[4] += str(i)
+    subprocess.call(call)
 
-
-
-subprocess.call (["Rscript", "--vanilla", path_sse, "sim_data",
-                 "run1", ".2", ".4", ".01", ".1", ".1", ".4"])
