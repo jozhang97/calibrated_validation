@@ -29,10 +29,10 @@ sim.sse <- function(output.dir, prefix, pars, is.classe=TRUE) {
   # Note: if the extinction rates exceed the speciations rates significantly, 
   #       the tree will die before speciation 
   if (is.classe) {
-    phy = tree.classe(pars, max.t=22, max.taxa=100, 
+    phy = tree.classe(pars, max.t=22, max.taxa=1000, 
                       include.extinct=FALSE, x0=NA)  
   } else {
-    phy = tree.bisse(pars, max.t=22, max.taxa=100, 
+    phy = tree.bisse(pars, max.t=22, max.taxa=1000, 
                include.extinct=FALSE, x0=NA)  
   }
   if (is.null(phy)) {
