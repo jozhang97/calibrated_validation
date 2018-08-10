@@ -50,7 +50,7 @@ sample.parameters <- function(output.dir, prefix, n.sim, param.names) {
   }
   params.df = as.data.frame(params)
   save.path = paste(output.dir, prefix, sep = "/")
-  save.path = paste(save.path, "params.csv", sep="_")
+  save.path = paste(save.path, "all_params.csv", sep="_")
   
   write.table(params.df, file=save.path, sep=",",
               row.names=FALSE, col.names=FALSE)

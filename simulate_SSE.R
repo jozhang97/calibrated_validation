@@ -29,24 +29,25 @@ sim.sse <- function(output.dir, prefix, pars, is.classe=TRUE) {
   # Note: if the extinction rates exceed the speciations rates significantly, 
   #       the tree will die before speciation 
   if (is.classe) {
-    phy = tree.classe(pars, max.t=22, max.taxa=Inf, 
+    phy = tree.classe(pars, max.t=22, max.taxa=100, 
                       include.extinct=FALSE, x0=NA)  
   } else {
-    phy = tree.bisse(pars, max.t=22, max.taxa=Inf, 
+    phy = tree.bisse(pars, max.t=22, max.taxa=100, 
                include.extinct=FALSE, x0=NA)  
   }
   if (is.null(phy)) {
     print(pars)
     print("Probably extinction rates are too high compared to speciation rates.")
-    return
   }
-  states = phy$tip.state
-  
-  save.path = paste(output.dir, prefix, sep = "/")
-  write.tips(states, file.name=paste(save.path, "tips.csv", sep = "_"))
-  write.tree(phy, file=paste(save.path, ".tree", sep = ""))
-  write.table(pars, file=save.path, 
-              row.names=FALSE, col.names=FALSE, eol=",")
+  else {
+    states = phy$tip.state
+    
+    save.path = paste(output.dir, prefix, sep = "/")
+    write.tips(states, file.name=paste(save.path, "tips.csv", sep = "_"))
+    write.tree(phy, file=paste(save.path, ".tree", sep = ""))
+    write.table(pars, file=paste(save.path, "params.csv", sep = "_"), 
+                row.names=FALSE, col.names=FALSE, eol=",")
+  }
 }
 
 
