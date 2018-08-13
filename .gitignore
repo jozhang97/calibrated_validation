@@ -3,5 +3,6 @@
 .RData
 .Ruserdata
 *.Rproj
-sim_data
+sim_data*
 *.pdf
+data*
