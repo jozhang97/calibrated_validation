@@ -20,8 +20,8 @@ tip_analysis <- function (path) {
     png(hist_path)
     dev.off()
 
-    num.inside = sum(5 <= tips & tips < 1000)
-    num.outside = sum(tips < 5 | tips > 1000)
+    num.inside = sum(5 <= tips & tips < 200)
+    num.outside = sum(tips < 5 | tips > 200)
     num.total = length(tips)
     print("Inside/Outside")
     print(1.0 * num.inside / num.total)
@@ -29,6 +29,9 @@ tip_analysis <- function (path) {
     print("Mean/Median")
     print(mean(tips))
     print(median(tips))
+    print(max(tips))
+    print(min(tips))
+    print(length(tips))
 }
 
 args = commandArgs(trailingOnly=TRUE)
