@@ -33,11 +33,10 @@ sample.parameter <- function(output.dir, prefix, n.sim, param.name) {
       axis.title.y = element_text(size=12)
     )
   ## plot.1 # uncomment and run to see graph
-  
-  png(paste0(output.dir, prefix, "_", param.name, ".png"), width=10, height=6, unit="cm", res=300)
-  plot.1
+  png_path = paste0(output.dir, prefix, "_", param.name, ".png")
+  ggsave(filename=png_path, plot=plot.1)
   dev.off()
-  p.df
+  df
 }
 
 sample.parameters <- function(output.dir, prefix, n.sim, param.names) {
