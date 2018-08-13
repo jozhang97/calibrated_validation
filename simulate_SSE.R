@@ -83,7 +83,7 @@ if (length(args) < 4) {
 
 output.dir = args[1]
 prefix = args[2]
-sim.time = args[3]
+sim.time = as.numeric(args[3])
 pars = c(args[4:length(args)])
 pars = as.numeric(pars)
 is.classe = length(pars) != 6

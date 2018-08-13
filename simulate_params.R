@@ -12,7 +12,7 @@ sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
   df <- data.frame(s); names(df) <- "value"
   r <- range(ps) # min and max from samples
   xaxis.max <- 15
-  
+
   plot.1 <- ggplot(df, aes(x=value)) +
     geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
     stat_function(fun=dlnorm,

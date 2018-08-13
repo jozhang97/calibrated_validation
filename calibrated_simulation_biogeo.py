@@ -9,6 +9,7 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
 
     r_script_1 = r_script_dir + "simulate_params.R"
     r_script_2 = r_script_dir + "simulate_SSE.R"
+    r_script_3 = r_script_dir + "sim_analysis.R"
 
     cmd_1 = ["Rscript", "--vanilla", r_script_1, output_dir, prefix, str(n_sims), str(mu), str(std)]
     if is_bisse:
@@ -29,6 +30,9 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
             cmd_this_sim = cmd_2 + row
             cmd_this_sim[4] += str(i)
             subprocess.call(cmd_this_sim)
+
+    cmd_3 = ["Rscript", "--vanilla", r_script_3, output_path]
+    subprocess.call (cmd_3)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Simulation script", description="Script for performing well-calibrated validation of biogeo package.")
