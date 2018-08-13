@@ -20,6 +20,13 @@ tip_analysis <- function (path) {
     png(hist_path)
     dev.off()
 
+    num.inside = sum(5 <= tips & tips < 1000)
+    num.outside = sum(tips < 5 | tips > 1000)
+    num.total = length(tips)
+    print("Inside/Outside")
+    print(1.0 * num.inside / num.total)
+    print(1.0 * num.outside / num.total)
+    print("Mean/Median")
     print(mean(tips))
     print(median(tips))
 }
