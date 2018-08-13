@@ -50,7 +50,7 @@ sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names) {
   params.df = as.data.frame(params)
   save.path = paste0(output.dir, prefix)
   save.path = paste(save.path, "all_params.csv", sep="_")
-  
+
   write.table(params.df, file=save.path, sep=",",
               row.names=FALSE, col.names=FALSE)
   # This csv has all of the parameters for all the simulations together to be used by next script.
@@ -75,9 +75,9 @@ if (length(args) < 6) {
 output.dir = args[1]
 prefix = args[2]
 n.sim = args[3]
-mu = args[4]
-std = args[5]
+mu = as.numeric(args[4])
+std = as.numeric(args[5])
 param.names = args[6:length(args)]
 
-sample.parameters(output.dir, prefix, n.sim, sim.time, mu, std, param.names)
+sample.parameters(output.dir, prefix, n.sim, mu, std, param.names)
 
