@@ -1,11 +1,11 @@
 library(ggplot2)
 
-sample.parameter <- function(output.dir, prefix, n.sim, param.name) {
+sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
   # Setting up arbitrary simulation values, and making objects
-  ps <- rlnorm(20000, meanlog=0, sdlog=1) # plotting samples: default mean and sd in log scale, and =0 and 1, respectively
+  ps <- rlnorm(20000, meanlog=mu, sdlog=std) # plotting samples: default mean and sd in log scale, and =0 and 1, respectively
   # bins breaking up a continuous rv
   # ground truth of the distribution
-  s <- rlnorm(n.sim, meanlog=0, sdlog=1) # actual samples
+  s <- rlnorm(n.sim, meanlog=mu, sdlog=std) # actual samples
   # actual samples we take from prior 
   p.df <- data.frame(ps); names(p.df) <- "value" 
   # like a table
@@ -39,12 +39,12 @@ sample.parameter <- function(output.dir, prefix, n.sim, param.name) {
   df
 }
 
-sample.parameters <- function(output.dir, prefix, n.sim, param.names) {
+sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names) {
   num_params = length(param.names)
   params = vector("list", length = num_params)
   for (i in 1 : num_params) {
     param.name = param.names[i]
-    p = sample.parameter(output.dir, prefix, n.sim, param.name)
+    p = sample.parameter(output.dir, prefix, n.sim, mu, std, param.name)
     params[[i]] = p
   }
   params.df = as.data.frame(params)
@@ -68,14 +68,16 @@ sample.parameters <- function(output.dir, prefix, n.sim, param.names) {
 # ----------- True Run --------------------------
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args) < 4) {
-  print("Not enough args. Output directory, Prefix, Num simulations, parameter names")
+if (length(args) < 6) {
+  print("Not enough args. Output directory, Prefix, Num simulations, mu, sigma, parameter names")
 }
 
 output.dir = args[1]
 prefix = args[2]
 n.sim = args[3]
-param.names = args[4:length(args)]  
+mu = args[4]
+std = args[5]
+param.names = args[6:length(args)]
 
-sample.parameters(output.dir, prefix, n.sim, param.names)
+sample.parameters(output.dir, prefix, n.sim, sim.time, mu, std, param.names)
 

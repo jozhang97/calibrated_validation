@@ -14,8 +14,6 @@ library(diversitree)
 library(ape)
 set.seed(1234)
 
-SIM.TIME = 3
-
 # write tip data file
 write.tips <- function(states, file.name){
   num_taxa = length(states)
@@ -27,14 +25,14 @@ write.tips <- function(states, file.name){
   }
 }
 
-sim.sse <- function(output.dir, prefix, pars, is.classe=TRUE) {
+sim.sse <- function(output.dir, prefix, sim.time, pars, is.classe=TRUE) {
   # Note: if the extinction rates exceed the speciations rates significantly, 
   #       the tree will die before speciation 
   if (is.classe) {
-    phy = tree.classe(pars, SIM.TIME, max.taxa=1000, 
+    phy = tree.classe(pars, sim.time,  max.taxa=1000, 
                       include.extinct=FALSE, x0=NA)  
   } else {
-    phy = tree.bisse(pars, SIM.TIME, max.taxa=1000, 
+    phy = tree.bisse(pars, sim.time, max.taxa=1000, 
                include.extinct=FALSE, x0=NA)  
   }
   if (is.null(phy)) {
@@ -79,16 +77,17 @@ sim.sse <- function(output.dir, prefix, pars, is.classe=TRUE) {
 
 # ------------- True Run --------------------------
 args = commandArgs(trailingOnly=TRUE)
-if (length(args) < 3) {
+if (length(args) < 4) {
   print("Not enough args.")
 }
 
 output.dir = args[1]
 prefix = args[2]
-pars = c(args[3:length(args)])
+sim.time = args[3]
+pars = c(args[4:length(args)])
 pars = as.numeric(pars)
 is.classe = length(pars) != 6
 
-sim.sse(output.dir, prefix, pars, is.classe = is.classe)
+sim.sse(output.dir, prefix, sim.time, pars, is.classe = is.classe)
 
 
