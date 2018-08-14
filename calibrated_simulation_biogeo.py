@@ -24,6 +24,8 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
 
     r_script_1 = r_script_dir + "simulate_params.R"
     r_script_2 = r_script_dir + "simulate_SSE.R"
+    # The analysis script doesn't always work when called together.
+    # Might need to call it separately
     r_script_3 = r_script_dir + "sim_analysis.R"
     output_path = os.path.join(output_dir, prefix)
 

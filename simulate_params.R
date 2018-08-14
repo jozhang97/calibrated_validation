@@ -45,6 +45,7 @@ sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names) {
   for (i in 1 : num_params) {
     param.name = param.names[i]
     p = sample.parameter(output.dir, prefix, n.sim, mu, std, param.name)
+    # TODO p (and params at the end of the loop) contains the df to plot. pls merge into one frame fabio
     params[[i]] = p
   }
   params.df = as.data.frame(params)
