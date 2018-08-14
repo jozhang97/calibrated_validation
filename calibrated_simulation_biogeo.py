@@ -4,31 +4,50 @@ import subprocess
 import csv
 import argparse
 
+def setup_data_csv(output_path, param_names):
+    data_file_name = output_path + "_data.csv"
+    with open(data_file_name, "w") as csv_file:
+        writer = csv.writer(csv_file, delimiter=",")
+        header = param_names + ["tree", "ntips", "tip_states"]
+        # TODO See if we can add ancestral states
+        writer.writerow(header)
+
+    discarded_file_name = output_path + "_discarded.csv"
+    with open(discarded_file_name, "w") as csv_file:
+        writer = csv.writer(csv_file, delimiter=",")
+        header = param_names
+        writer.writerow(header)
+
+
 def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, std):
     """ Call simulation pipeline (r script 1, r script 2) """
 
     r_script_1 = r_script_dir + "simulate_params.R"
     r_script_2 = r_script_dir + "simulate_SSE.R"
     r_script_3 = r_script_dir + "sim_analysis.R"
+    output_path = os.path.join(output_dir, prefix)
 
     cmd_1 = ["Rscript", "--vanilla", r_script_1, output_dir, prefix, str(n_sims), str(mu), str(std)]
     if is_bisse:
-        cmd_bisse = cmd_1 + ["l1", "l2", "m1", "m2", "q12", "q21"]
+        param_names = ["l1", "l2", "m1", "m2", "q12", "q21"]
+        cmd_bisse = cmd_1 + param_names
         subprocess.call(cmd_bisse)
+        setup_data_csv(output_path, param_names)
+
     else:
         param_names = ["l111", "l112", "l22", "l211", "l221", "l222", "m1", "m2", "q12", "q21"]
         cmd_classe = cmd_1 + param_names
         subprocess.call (cmd_classe)
+        setup_data_csv(output_path, param_names)
 
     cmd_2 = ["Rscript", "--vanilla", r_script_2, output_dir, prefix, str(sim_time)]
 
-    output_path = os.path.join(output_dir, prefix)
     with open(output_path + '_all_params.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
 
         for i, row in enumerate(csv_reader):
-            cmd_this_sim = cmd_2 + row
-            cmd_this_sim[4] += str(i)
+            cmd_this_sim = cmd_2 + [str(i)]
+            cmd_this_sim = cmd_this_sim + row
             subprocess.call(cmd_this_sim)
 
     cmd_3 = ["Rscript", "--vanilla", r_script_3, output_path]

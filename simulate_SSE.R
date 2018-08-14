@@ -10,9 +10,18 @@
 # Do not need information on extinct taxa
 # Sample initial state from equilibrium distribution
 
-library(diversitree)
 library(ape)
+library(diversitree)
 set.seed(1234)
+
+
+write.separately <- function(phy, states, pars, save.path, run.num) {
+    save.path = paste0(save.path, run.num)
+    write.tips(states, file.name=paste(save.path, "tips.csv", sep = "_"))
+    write.tree(phy, file=paste(save.path, ".tree", sep = ""))
+    write.table(pars, file=paste(save.path, "params.csv", sep = "_"), 
+            row.names=FALSE, col.names=FALSE, eol=",")
+}
 
 # write tip data file
 write.tips <- function(states, file.name){
@@ -25,28 +34,43 @@ write.tips <- function(states, file.name){
   }
 }
 
-sim.sse <- function(output.dir, prefix, sim.time, pars, is.classe=TRUE) {
+write.together <- function(phy, states, pars, save.path) {
+    file.name = paste (save.path, "data.csv", sep="_")
+    phy.newick = write.tree(phy)
+    states.tuples = paste(names(states), states, sep="=")
+    states.merged = paste(states.tuples, collapse = ",")
+
+    row = c(pars, phy.newick, length(states), states.merged)
+    row = as.matrix(t(row))
+    write.table(row, file = file.name, sep = ",", append = TRUE,
+                  col.names = FALSE, row.names = FALSE)
+}
+
+write.discarded <- function(pars, save.path) {
+    file.name = paste (save.path, "discarded.csv", sep="_")
+    row = as.matrix(t(c(pars)))
+    write.table(row, file = file.name, append = TRUE, sep = ",",
+                col.names = FALSE, row.names = FALSE)
+}
+
+sim.sse <- function(output.dir, prefix, sim.time, run.num, pars, is.classe=TRUE) {
   # Note: if the extinction rates exceed the speciations rates significantly, 
   #       the tree will die before speciation 
   if (is.classe) {
     phy = tree.classe(pars, sim.time,  max.taxa=1000, 
-                      include.extinct=FALSE, x0=NA)  
+                include.extinct=FALSE, x0=NA)  
   } else {
     phy = tree.bisse(pars, sim.time, max.taxa=1000, 
-               include.extinct=FALSE, x0=NA)  
+                include.extinct=FALSE, x0=NA)  
   }
+  save.path = paste0(output.dir, prefix)
   if (is.null(phy)) {
-    print(pars)
-    print("Probably extinction rates are too high compared to speciation rates.")
+    write.discarded(pars, save.path)
   }
   else {
     states = phy$tip.state
-    
-    save.path = paste(output.dir, prefix, sep = "/")
-    write.tips(states, file.name=paste(save.path, "tips.csv", sep = "_"))
-    write.tree(phy, file=paste(save.path, ".tree", sep = ""))
-    write.table(pars, file=paste(save.path, "params.csv", sep = "_"), 
-                row.names=FALSE, col.names=FALSE, eol=",")
+    #write.separately(phy, states, pars, save.path, run.num)
+    write.together(phy, states, pars, save.path)
   }
 }
 
@@ -84,10 +108,11 @@ if (length(args) < 4) {
 output.dir = args[1]
 prefix = args[2]
 sim.time = as.numeric(args[3])
-pars = c(args[4:length(args)])
+run.num = args[4]
+pars = c(args[5:length(args)])
 pars = as.numeric(pars)
 is.classe = length(pars) != 6
 
-sim.sse(output.dir, prefix, sim.time, pars, is.classe = is.classe)
+sim.sse(output.dir, prefix, sim.time, run.num, pars, is.classe = is.classe)
 
 
