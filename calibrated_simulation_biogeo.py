@@ -8,14 +8,14 @@ def setup_data_csv(output_path, param_names):
     data_file_name = output_path + "_data.csv"
     with open(data_file_name, "w") as csv_file:
         writer = csv.writer(csv_file, delimiter=",")
-        header = param_names + ["tree", "ntips", "tip_states"]
+        header = param_names + ["tree", "ntips", "tipstates"]
         # TODO See if we can add ancestral states
         writer.writerow(header)
 
     discarded_file_name = output_path + "_discarded.csv"
     with open(discarded_file_name, "w") as csv_file:
         writer = csv.writer(csv_file, delimiter=",")
-        header = param_names
+        header = param_names + ["tree", "ntips", "tipstates"]
         writer.writerow(header)
 
 

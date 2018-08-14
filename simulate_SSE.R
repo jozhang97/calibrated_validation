@@ -48,7 +48,8 @@ write.together <- function(phy, states, pars, save.path) {
 
 write.discarded <- function(pars, save.path) {
     file.name = paste (save.path, "discarded.csv", sep="_")
-    row = as.matrix(t(c(pars)))
+    row = c(pars, "NA", "NA", "NA")
+    row = as.matrix(t(c(row)))
     write.table(row, file = file.name, append = TRUE, sep = ",",
                 col.names = FALSE, row.names = FALSE)
 }
