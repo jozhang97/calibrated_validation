@@ -4,6 +4,21 @@ import subprocess
 import csv
 import argparse
 
+class CsvInfoStash:
+    def __init__(self, params, tree, n_tips, tip_states):
+        self.params = params
+        self.tree = tree
+        self.n_tips = n_tips
+        self.tip_states = tip_states
+
+    def populate_xml(self):
+        # TODO
+        pass
+
+    def write_xml(self, output_dir):
+        # TODO
+        pass
+
 def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, std):
     """ Call simulation pipeline (r script 1, r script 2) """
 
@@ -25,19 +40,40 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
         cmd_classe = cmd_1 + param_names
         subprocess.call(cmd_classe)
 
+def parse_simulations():
+    """ Parse .csv file into .xmls """
+
+    # TODO: create list of CsvInfoStash objects
+    # TODO: print 1 xml per CsvInfoStash
+    pass
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Simulation script", description="Script for performing well-calibrated validation of biogeo package.")
     parser.add_argument("-rd", "--rscripts-dir", action="store", dest="rscriptsdir", default="./", type=str, help="full file path to r scripts directory.")
     parser.add_argument("-od", "--output-dir", action="store", dest="outputdir", default="./", type=str, help="full file path to directory where simulations and log files will be saved.")
+    parser.add_argument("-xd", "--xml-dir", action="store", dest="xmldir", default="./", type=str, help="full file path to directory where .xml's will be saved.")
     parser.add_argument("-n", "--n-sims", action="store", dest="nsims", default=1000, type=int, help="number of simulations.")
     parser.add_argument("-b", "--is-bisse", action="store", dest="bisse", default=True, type=bool, help="Flag for BiSSE simulations (default: True)")
     parser.add_argument("-p", "--prefix", action="store", dest="prefix", default="", type=str, help="Prefix for result files.")
     parser.add_argument("-st", "--sim-time", action="store", dest="simtime", default=10, type=float, help="Time to run simulation.")
     parser.add_argument("-m", "--mu", action="store", dest="mu", default=0, type=float, help="Mean of lognormal dist.")
     parser.add_argument("-sd", "--std", action="store", dest="std", default=0.05, type=float, help="Stdev of lognormal dist.")
+    parser.add_argument("-xt", "--xml-template", action="store", dest="xmlt", default=None, type=str, help="Full path to template of .xml file.")
     args = parser.parse_args()
+
+    xml_str = str()
+    try:
+        with open(args.xmlt, "r") as xml_template:
+            xml_str = xml_template.readlines()
+    except IOError:
+        exit("Could not find file "+xmlt+". Exiting...")
 
     if not os.path.exists(args.outputdir):
         os.makedirs(args.outputdir)
 
-    simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.mu, args.std)
+    if not os.path.exists(args.xmldir):
+        os.makedirs(args.xmldir)
+        
+    simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.mu, args.std) # calls R script, produces .csv files and plots
+
+    parse_simulations() # parses .csv into .xml files
