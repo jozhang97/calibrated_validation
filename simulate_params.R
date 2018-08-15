@@ -1,63 +1,77 @@
 library(ggplot2)
+library(gridExtra)
+library(sjPlot)
+library(diversitree)
+set.seed(1234)
 
+args = commandArgs(trailingOnly=TRUE)
+output.dir <- args[1]
+prefix <- args[2]
+n.sim <- args[3]
+mu <- as.numeric(args[4])
+std <- as.numeric(args[5])
+sim.time <- as.numeric(args[6])
+param.names <- args[7:length(args)]
+
+# --- START: Prior sampling stuff --- #
 sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
-  # Setting up arbitrary simulation values, and making objects
-  ps <- rlnorm(20000, meanlog=mu, sdlog=std) # plotting samples: default mean and sd in log scale, and =0 and 1, respectively
-  # bins breaking up a continuous rv
-  # ground truth of the distribution
-  s <- rlnorm(n.sim, meanlog=mu, sdlog=std) # actual samples
-  # actual samples we take from prior 
-  p.df <- data.frame(ps); names(p.df) <- "value" 
-  # like a table
-  df <- data.frame(s); names(df) <- "value"
-  r <- range(ps) # min and max from samples
-  xaxis.max <- 15
+    # Setting up arbitrary simulation values, and making objects
+    ps <- rlnorm(20000, meanlog=mu, sdlog=std) # plotting samples: default mean and sd in log scale, and =0 and 1, respectively
+    s <- rlnorm(n.sim, meanlog=mu, sdlog=std) # actual samples we take from the prior
+    p.df <- data.frame(ps); names(p.df) <- "value" # df for curve                                      
+    df <- data.frame(s); names(df) <- "value" # samples df
+    r <- range(ps) # min and max from samples, for plotting
+    xaxis.max <- 3 # for plotting
 
-  plot.1 <- ggplot(df, aes(x=value)) +
-    geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
-    stat_function(fun=dlnorm,
-                  args=list(r[1]:r[2], meanlog=mean(log(p.df$value)), sdlog=sd(log(p.df$value)))
-    ) +
-    scale_x_continuous(breaks=seq(0, xaxis.max, by=1), limits=c(0, xaxis.max)) +
-    xlab("Parameter value") + ylab("Density") + 
-    theme(
-      panel.grid.minor = element_blank(),
-      panel.border = element_blank(),
-      panel.background = element_blank(),
-      plot.background = element_blank(),
-      axis.line = element_line(),
-      axis.ticks = element_line(color="black"),
-      axis.text.x = element_text(color="black", size=10),
-      axis.text.y = element_text(color="black", size=10),
-      axis.title.x = element_text(size=12),
-      axis.title.y = element_text(size=12)
-    )
-  ## plot.1 # uncomment and run to see graph
-  png_path = paste0(output.dir, prefix, "_", param.name, ".png")
-  ggsave(filename=png_path, plot=plot.1)
-  dev.off()
-  df
+    prior.samples.plot <- ggplot(df, aes(x=value)) +
+        geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
+        ggtitle(param.name) +
+        stat_function(fun=dlnorm,
+                      args=list(r[1]:r[2], meanlog=mean(log(p.df$value)), sdlog=sd(log(p.df$value)))
+                      ) +
+        scale_x_continuous(breaks=seq(0, xaxis.max, by=1), limits=c(0, xaxis.max)) +
+        xlab("Parameter value") + ylab("Density") + 
+        theme(
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(),
+            panel.background = element_blank(),
+            plot.background = element_blank(),
+            plot.title = element_text(hjust=0.5),
+            axis.line = element_line(),
+            axis.ticks = element_line(color="black"),
+            axis.text.x = element_text(color="black", size=10),
+            axis.text.y = element_text(color="black", size=10),
+            axis.title.x = element_text(size=12),
+            axis.title.y = element_text(size=12)
+        )
+
+    ## prior.samples.plot # uncomment and run to see graph
+    return(list(prior.samples.plot, df))
 }
 
 sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names) {
-  num_params = length(param.names)
-  params = vector("list", length = num_params)
-  for (i in 1 : num_params) {
-    param.name = param.names[i]
-    p = sample.parameter(output.dir, prefix, n.sim, mu, std, param.name)
-    # TODO p (and params at the end of the loop) contains the df to plot. pls merge into one frame fabio
-    params[[i]] = p
-  }
-  params.df = as.data.frame(params)
-  save.path = paste0(output.dir, prefix)
-  save.path = paste(save.path, "all_params.csv", sep="_")
+    num_params = length(param.names)
+    params = vector("list", length = num_params)
+    plots = vector("list", length = num_params)
 
-  write.table(params.df, file=save.path, sep=",",
-              row.names=FALSE, col.names=FALSE)
-  # This csv has all of the parameters for all the simulations together to be used by next script.
-  # It should not be used for any other purposes
+    for (i in 1 : num_params) {
+        param.name = param.names[i]
+        res = sample.parameter(output.dir, prefix, n.sim, mu, std, param.name)
+        plots[[i]] = res[[1]]
+        params[[i]] = res[[2]]
+    }
+
+    params.df = as.data.frame(params)
+    names(params.df) = param.names
+    save.path = paste(paste0(output.dir, prefix), "all_params.csv", sep="_")
+
+    # printing all panels in single graph (png() won't work)
+    pdf(paste0(output.dir, "prior_samples.pdf"), width=6, height=7)
+    plot_grid(plots)
+    dev.off()
+
+    return(params.df)
 }
-
 
 # ----------- Test Run --------------------------
 # output.dir <- "~/Desktop/"
@@ -67,18 +81,35 @@ sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names) {
 # sample.parameters(output.dir, prefix, n.sim, param.name)
 
 # ----------- True Run --------------------------
-args = commandArgs(trailingOnly=TRUE)
-
 if (length(args) < 6) {
   print("Not enough args. Output directory, Prefix, Num simulations, mu, sigma, parameter names")
 }
 
-output.dir = args[1]
-prefix = args[2]
-n.sim = args[3]
-mu = as.numeric(args[4])
-std = as.numeric(args[5])
-param.names = args[6:length(args)]
+params.df <- sample.parameters(output.dir, prefix, n.sim, mu, std, param.names) # table with all parameters for all simulations
+# --- END: Prior sampling stuff --- #
 
-sample.parameters(output.dir, prefix, n.sim, mu, std, param.names)
+# --- START: Simulations --- #
+# BiSSE
+params.df$tree <- NA
+params.df$ntips <- 0
+params.df$tipstates <- NA
+simulated.trees <- 0
+for (i in 1:nrow(params.df)) {
+    pars = unlist(params.df[i,1:6], use.names=FALSE)
+    phy = tree.bisse(pars, sim.time, max.taxa=1000, include.extinct=FALSE, x0=NA)
 
+    if (!is.null(phy)) {
+        if (simulated.trees > 100) { break }
+        simulated.trees = simulated.trees + 1
+        print(simulated.trees)
+        params.df[i,"tree"] = write.tree(phy)
+        params.df[i,"ntips"] = length(phy$tip.state)
+        params.df[i,"tipstates"] = paste(
+            paste(names(phy$tip.state), phy$tip.state, sep="="),
+                collapse="_")
+    }
+}
+write.csv(params.df[!is.na(params.df$"tree"),], file=paste0(output.dir, "data_param_tree.csv"),
+          row.names=FALSE, quote=FALSE)
+write.csv(params.df[is.na(params.df$"tree"),], file=paste0(output.dir, "discarded_param_tree.csv"),
+          row.names=FALSE, quote=FALSE)
