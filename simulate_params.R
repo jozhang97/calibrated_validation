@@ -66,6 +66,7 @@ sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names) {
     save.path = paste(paste0(output.dir, prefix), "all_params.csv", sep="_")
 
     # printing all panels in single graph (png() won't work)
+    cat("Plotting prior_samples.pdf\n")
     pdf(paste0(output.dir, "prior_samples.pdf"), width=6, height=7)
     plot_grid(plots)
     dev.off()
@@ -89,6 +90,29 @@ params.df <- sample.parameters(output.dir, prefix, n.sim, mu, std, param.names) 
 # --- END: Prior sampling stuff --- #
 
 # --- START: Simulations --- #
+plot.ntips <- function(my.df) {
+    cat("\nPlotting ntips.pdf\n")
+    res <- ggplot(my.df, aes(x=ntips)) +
+        geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
+        ggtitle(paste("Median number of tips =", median(my.df$ntips), sep=" ")) +
+        xlab("Number of tips") + ylab("Density") + 
+        theme(
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(),
+            panel.background = element_blank(),
+            plot.background = element_blank(),
+            plot.title = element_text(hjust=0.5),
+            axis.line = element_line(),
+            axis.ticks = element_line(color="black"),
+            axis.text.x = element_text(color="black", size=10),
+            axis.text.y = element_text(color="black", size=10),
+            axis.title.x = element_text(size=12),
+            axis.title.y = element_text(size=12)
+        )
+
+    ggsave(paste0(output.dir, "ntips.pdf"), plot=res, width=6, height=3)
+}
+
 # BiSSE
 params.df$tree <- NA
 params.df$ntips <- 0
@@ -98,15 +122,19 @@ for (i in 1:nrow(params.df)) {
     pars = unlist(params.df[i,1:6], use.names=FALSE)
     phy = tree.bisse(pars, sim.time, max.taxa=1000, include.extinct=FALSE, x0=NA)
 
-    if (!is.null(phy)) {
-        if (simulated.trees > 100) { break }
+    if (!is.null(phy)) {        
         simulated.trees = simulated.trees + 1
-        print(simulated.trees)
+        cat(paste0("Simulated ",simulated.trees," trees.\r"))
         params.df[i,"tree"] = write.tree(phy)
         params.df[i,"ntips"] = length(phy$tip.state)
         params.df[i,"tipstates"] = paste(
             paste(names(phy$tip.state), phy$tip.state, sep="="),
-                collapse="_")
+            collapse="_")
+
+        if (simulated.trees == 100) {
+            plot.ntips(params.df[!is.na(params.df$"tree"),]) # plotting ntips.pdf
+            break
+        }
     }
 }
 write.csv(params.df[!is.na(params.df$"tree"),], file=paste0(output.dir, "data_param_tree.csv"),

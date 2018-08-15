@@ -4,20 +4,6 @@ import subprocess
 import csv
 import argparse
 
-# def setup_data_csv(output_path, param_names):
-#     data_file_name = output_path + "_data.csv"
-#     with open(data_file_name, "w") as csv_file:
-#         writer = csv.writer(csv_file, delimiter=",")
-#         header = param_names + ["tree", "ntips", "tipstates"]
-#         # TODO See if we can add ancestral states
-#         writer.writerow(header)
-
-#     discarded_file_name = output_path + "_discarded.csv"
-#     with open(discarded_file_name, "w") as csv_file:
-#         writer = csv.writer(csv_file, delimiter=",")
-#         header = param_names + ["tree", "ntips", "tipstates"]
-#         writer.writerow(header)
-
 def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, std):
     """ Call simulation pipeline (r script 1, r script 2) """
 
@@ -39,23 +25,6 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
         cmd_classe = cmd_1 + param_names
         subprocess.call(cmd_classe)
 
-    # setup_data_csv(output_path, param_names) # writes csv tables r_script_2 uses
-
-    # r_script_2 = r_script_dir + "simulate_SSE.R"
-    # cmd_2 = ["Rscript", "--vanilla", r_script_2, output_dir, prefix, str(sim_time)]
-
-    # with open(output_path + '_all_params.csv') as csv_file:
-    #     csv_reader = csv.reader(csv_file, delimiter=',')
-
-    #     for i, row in enumerate(csv_reader):
-    #         cmd_this_sim = cmd_2 + [str(i)]
-    #         cmd_this_sim = cmd_this_sim + row
-    #         subprocess.call(cmd_this_sim)
-
-    # r_script_3 = r_script_dir + "sim_analysis.R"
-    # cmd_3 = ["Rscript", "--vanilla", r_script_3, output_path]
-    # subprocess.call(cmd_3)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Simulation script", description="Script for performing well-calibrated validation of biogeo package.")
     parser.add_argument("-rd", "--rscripts-dir", action="store", dest="rscriptsdir", default="./", type=str, help="full file path to r scripts directory.")
@@ -72,4 +41,3 @@ if __name__ == "__main__":
         os.makedirs(args.outputdir)
 
     simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.mu, args.std)
-
