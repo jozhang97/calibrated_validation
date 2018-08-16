@@ -11,13 +11,13 @@ class CsvInfoStash:
         self.n_tips = n_tips
         self.tip_states = tip_states
 
-    def populate_xml(self):
+    def populate_xml(self, xml_template):
         # TODO
-        pass
+        self.xml = "xml"
 
-    def write_xml(self, output_dir):
-        # TODO
-        pass
+    def write_xml(self, file_name):
+        with open(file_name, "w") as f:
+            f.write(self.xml)
 
 def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, std):
     """ Call simulation pipeline (r script 1, r script 2) """
@@ -40,12 +40,30 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
         cmd_classe = cmd_1 + param_names
         subprocess.call(cmd_classe)
 
-def parse_simulations():
+def parse_simulations(output_dir, xml_dir, xml_template):
     """ Parse .csv file into .xmls """
+    csv_info_stashs = []
 
-    # TODO: create list of CsvInfoStash objects
-    # TODO: print 1 xml per CsvInfoStash
-    pass
+    csv_data = output_dir + "data_param_tree.csv"
+    with open(csv_data) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for i, row in enumerate(csv_reader):
+            params = row[:-3]
+            tree = row[-3]
+            n_tips = row[-2]
+            tip_states = row[-1]
+
+            csv_info_stash = CsvInfoStash(params, tree, n_tips, tip_states)
+            csv_info_stashs.append(csv_info_stash)
+
+
+    for i, csv_info_stash in enumerate(csv_info_stashs):
+        csv_info_stash.populate_xml(xml_template)
+        xml_file_name = xml_dir + str(i) + ".xml"
+        csv_info_stash.write_xml(xml_file_name)
+
+    return
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Simulation script", description="Script for performing well-calibrated validation of biogeo package.")
@@ -73,7 +91,7 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.xmldir):
         os.makedirs(args.xmldir)
-        
+
     simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.mu, args.std) # calls R script, produces .csv files and plots
 
-    parse_simulations() # parses .csv into .xml files
+    parse_simulations(args.outputdir, args.xmldir, args.xmlt) # parses .csv into .xml files
