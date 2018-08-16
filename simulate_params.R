@@ -18,7 +18,7 @@ sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     # Setting up arbitrary simulation values, and making objects
     ps <- rlnorm(20000, meanlog=mu, sdlog=std) # plotting samples: default mean and sd in log scale, and =0 and 1, respectively
     s <- rlnorm(n.sim, meanlog=mu, sdlog=std) # actual samples we take from the prior
-    p.df <- data.frame(ps); names(p.df) <- "value" # df for curve                                      
+    p.df <- data.frame(ps); names(p.df) <- "value" # df for curve
     df <- data.frame(s); names(df) <- "value" # samples df
     r <- range(ps) # min and max from samples, for plotting
     xaxis.max <- 3 # for plotting
@@ -87,6 +87,8 @@ if (length(args) < 6) {
 }
 
 params.df <- sample.parameters(output.dir, prefix, n.sim, mu, std, param.names) # table with all parameters for all simulations
+init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mu, std, param.names) # table with all parameters for all simulations
+write.csv(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE)
 # --- END: Prior sampling stuff --- #
 
 # --- START: Simulations --- #
