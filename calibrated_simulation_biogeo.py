@@ -14,6 +14,11 @@ class CsvInfoStash:
     def populate_xml(self, xml_template):
         # TODO
         self.xml = xml_template
+        keys = ["[Mean Lambda Prior]", "[Stdev Lambda Prior]", "[Mean Mu Prior]",
+                "[Stdev Mu Prior]", "[Mean FlatQMatrix Prior]", "[Stdev FlatQMatrix Prior]", "[Tree in newick format]", "[List of species]",
+                "[Initial transition rate values]", "[Initial lambda values]", "[Initial mu values]", "[Pi values]", "[Species=Trait State]"]
+        for key in keys:
+            self.xml = self.xml.replace(key, "foo")
 
     def write_xml(self, file_name):
         with open(file_name, "w") as f:
@@ -40,7 +45,7 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
         cmd_classe = cmd_1 + param_names
         subprocess.call(cmd_classe)
 
-def parse_simulations(output_dir, xml_dir, xml_template, prefix):
+def parse_simulations(output_dir, xml_dir, xml_template_name, prefix):
     """ Parse .csv file into .xmls """
     csv_info_stashs = []
 
@@ -60,6 +65,9 @@ def parse_simulations(output_dir, xml_dir, xml_template, prefix):
             csv_info_stash = CsvInfoStash(init_params, tree, n_tips, tip_states)
             csv_info_stashs.append(csv_info_stash)
 
+
+    with open(xml_template_name, 'r') as xml_template_file:
+        xml_template = xml_template_file.read()
 
     for i, csv_info_stash in enumerate(csv_info_stashs):
         csv_info_stash.populate_xml(xml_template)
