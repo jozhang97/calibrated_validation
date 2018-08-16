@@ -44,16 +44,22 @@ def parse_simulations(output_dir, xml_dir, xml_template):
     """ Parse .csv file into .xmls """
     csv_info_stashs = []
 
-    csv_data = output_dir + "data_param_tree.csv"
-    with open(csv_data) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=',')
-        for i, row in enumerate(csv_reader):
-            params = row[:-3]
-            tree = row[-3]
-            n_tips = row[-2]
-            tip_states = row[-1]
+    csv_tree = output_dir + "data_param_tree.csv"
+    csv_inits = output_dir + "data_param_inits.csv"
+    with open(csv_tree) as tree_file, open(csv_inits) as inits_file:
+        tree_reader = csv.reader(tree_file, delimiter=',')
+        inits_reader = csv.reader(inits_file, delimiter=',')
+        for i, (tree_row, init_params) in enumerate(zip(tree_reader, inits_reader)):
+            if i == 0:
+                # ignore first line since its the headers
+                continue
+            true_params = tree_row[:-3]
+            tree = tree_row[-3]
+            n_tips = tree_row[-2]
+            tip_states = tree_row[-1]
 
-            csv_info_stash = CsvInfoStash(params, tree, n_tips, tip_states)
+            # Not sure on first argument
+            csv_info_stash = CsvInfoStash(init_params, tree, n_tips, tip_states)
             csv_info_stashs.append(csv_info_stash)
 
 
