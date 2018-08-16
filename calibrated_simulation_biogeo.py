@@ -5,15 +5,15 @@ import csv
 import argparse
 
 class CsvInfoStash:
-    def __init__(self, params, tree, n_tips, tip_states):
-        self.params = params
+    def __init__(self, init_params, tree, n_tips, tip_states):
+        self.init_params = init_params
         self.tree = tree
         self.n_tips = n_tips
         self.tip_states = tip_states
 
     def populate_xml(self, xml_template):
         # TODO
-        self.xml = "xml"
+        self.xml = xml_template
 
     def write_xml(self, file_name):
         with open(file_name, "w") as f:
@@ -40,7 +40,7 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
         cmd_classe = cmd_1 + param_names
         subprocess.call(cmd_classe)
 
-def parse_simulations(output_dir, xml_dir, xml_template):
+def parse_simulations(output_dir, xml_dir, xml_template, prefix):
     """ Parse .csv file into .xmls """
     csv_info_stashs = []
 
@@ -50,22 +50,20 @@ def parse_simulations(output_dir, xml_dir, xml_template):
         tree_reader = csv.reader(tree_file, delimiter=',')
         inits_reader = csv.reader(inits_file, delimiter=',')
         for i, (tree_row, init_params) in enumerate(zip(tree_reader, inits_reader)):
-            if i == 0:
-                # ignore first line since its the headers
+            if i == 0: # ignore first line since its the headers
                 continue
-            true_params = tree_row[:-3]
+            true_params = tree_row[:-3]  # These will not be used as they are what we are estimating
             tree = tree_row[-3]
             n_tips = tree_row[-2]
             tip_states = tree_row[-1]
 
-            # Not sure on first argument
             csv_info_stash = CsvInfoStash(init_params, tree, n_tips, tip_states)
             csv_info_stashs.append(csv_info_stash)
 
 
     for i, csv_info_stash in enumerate(csv_info_stashs):
         csv_info_stash.populate_xml(xml_template)
-        xml_file_name = xml_dir + str(i) + ".xml"
+        xml_file_name = xml_dir + prefix + str(i) + ".xml"
         csv_info_stash.write_xml(xml_file_name)
 
     return
@@ -100,4 +98,4 @@ if __name__ == "__main__":
 
     simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.mu, args.std) # calls R script, produces .csv files and plots
 
-    parse_simulations(args.outputdir, args.xmldir, args.xmlt) # parses .csv into .xml files
+    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix) # parses .csv into .xml files
