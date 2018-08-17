@@ -6,7 +6,19 @@ import argparse
 import numpy as np
 
 def convert_to_species_list(tip_states):
-    pass
+    # TODO is this right info we want?
+    def construct_taxon_xml(tip_name):
+        taxon = "<taxon id=\""
+        taxon += tip_name
+        taxon += "\" spec=\"Taxon\"/> \n"
+        return taxon
+
+    taxon_set = ""
+    for tip_state in tip_states.split(","):
+        tip_name = tip_state.split("=")[0]
+        taxon_set += construct_taxon_xml(tip_name)
+
+    return taxon_set
 
 def convert_to_rate_matrix(q):
     # solve n * n - n = len(q)
@@ -60,7 +72,7 @@ class CsvInfoStash:
         self.replace_in_xml("[Mean FlatQMatrix Prior]", "0", quoted=True)
         self.replace_in_xml("[Stdev FlatQMatrix Prior]", "0.1", quoted=True)
         self.replace_in_xml("[Tree in newick format]", self.tree)
-        self.replace_in_xml("[List of species]", convert_to_species_list(self.tip_states))  # TODO What's happening here? whats spec <taxon id="Sp1" spec="Taxon"/>
+        self.replace_in_xml("[List of species]", convert_to_species_list(self.tip_states))
         self.replace_in_xml("[Initial transition rate values]", convert_to_rate_matrix(self.init_params[4:6]))
         self.replace_in_xml("[Initial lambda values]", self.init_params[0:2])
         self.replace_in_xml("[Initial mu values]", self.init_params[2:4])
