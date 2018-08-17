@@ -8,7 +8,7 @@
       <stateNode idref="FlatQMatrix"/>
     </state>
 
-    <distribution id="posterior" spec="util.CompoundDistribution">   
+    <distribution id="posterior" spec="util.CompoundDistribution">
 
       <!-- START prior -->
       <distribution id="prior" spec="util.CompoundDistribution">
@@ -28,8 +28,9 @@
 
         <distribution id="FlatQMatrixPrior" spec="beast.math.distributions.Prior" x="@FlatQMatrix">
           <distr id="LogNormal.FlatQMatrix" spec="beast.math.distributions.LogNormalDistributionModel" offset="0.0" meanInRealSpace="false">
-	    <parameter name="M" value=[Mean FlatQMatrix Prior] estimate="false"/> <!-- e.g., 0.1 -->
-	    <parameter name="M" value=[Stdev FlatQMatrix Prior] estimate="false"/> <!-- e.g., 0.05 -->
+	        <parameter name="M" value=[Mean FlatQMatrix Prior] estimate="false"/> <!-- e.g., 0.1 -->
+	        <parameter name="S" value=[Stdev FlatQMatrix Prior] estimate="false"/> <!-- e.g., 0.05 -->
+          </distr>
         </distribution>
       </distribution>
       <!-- END prior -->
