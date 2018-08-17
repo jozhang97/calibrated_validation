@@ -30,12 +30,14 @@ def convert_to_rate_matrix(q):
     # TODO ... this is kinda annoying, keep looking for a library
 
 class CsvInfoStash:
-    def __init__(self, init_params, prior_params, tree, n_tips, tip_states):
+    def __init__(self, init_params, prior_params, tree, n_tips, tip_states, output_dir, prefix):
         self.init_params = init_params
         self.prior_params = prior_params
         self.tree = tree
         self.n_tips = n_tips
         self.tip_states = tip_states
+        self.output_dir = output_dir
+        self.prefix = prefix
         self.xml = ""
 
     def update_xml(self, xml_template):
@@ -79,6 +81,10 @@ class CsvInfoStash:
         self.replace_in_xml("[Initial mu values]", self.init_params[2:4])
         self.replace_in_xml("[Pi values]", "0.0 0.0 0.5 0.5")
         self.replace_in_xml("[Species=Trait State]", self.tip_states)
+        self.replace_in_xml("[Simulation log file name]", self.output_dir + self.prefix + "_sim_log.log")
+        self.replace_in_xml("[Simulation tree file name]", self.output_dir + self.prefix + "_sim_trees.trees")
+
+
 
     def write_xml(self, file_name):
         with open(file_name, "w") as f:
@@ -122,7 +128,7 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_para
             n_tips = tree_row[-2]
             tip_states = tree_row[-1]
 
-            csv_info_stash = CsvInfoStash(init_params, prior_params, tree, n_tips, tip_states)
+            csv_info_stash = CsvInfoStash(init_params, prior_params, tree, n_tips, tip_states, output_dir, prefix)
             csv_info_stashs.append(csv_info_stash)
 
 
