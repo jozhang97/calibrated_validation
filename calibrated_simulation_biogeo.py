@@ -23,7 +23,7 @@ def convert_to_species_list(tip_states):
 def convert_to_rate_matrix(q):
     # solve n * n - n = len(q)
     if len(q) == 2:  # BiSSE
-        return [-1*eval(q[0]), q[0], q[1], -1*eval(q[1])] # TODO is this right numbers?
+        return [1e-10, q[0], q[1], 1e-10]
     raise NotImplementedError
     #roots = np.roots(1, -1, len(q))
     #n = max(roots)  # not sure

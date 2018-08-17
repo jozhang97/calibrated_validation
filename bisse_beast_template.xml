@@ -36,7 +36,7 @@
       <!-- END prior -->
 
       <distribution id="likelihood" spec="util.CompoundDistribution" useThreads="true">
-	<distribution id="StateDependentSpeciationExtinctionProcess" spec="biogeo.StateDependentSpeciationExtinctionProcess" IncorporateCladogenesis="true">
+	<distribution id="StateDependentSpeciationExtinctionProcess" spec="biogeo.StateDependentSpeciationExtinctionProcess" IncorporateCladogenesis="false">
 	  <TreeParser id="TreeParser" spec="beast.util.TreeParser" IsLabelledNewick="true" adjustTipHeights="false" newick="[Tree in newick format]" offset="0" singlechild="false"> <!-- e.g., ((Human:1.0,Chimp:1.0):1.0,Gorilla:2.0); -->
 	    <taxonset id="TaxonSet" spec="TaxonSet">
 	        <!-- e.g., <taxon id="Sp1" spec="Taxon"/> -->
@@ -51,7 +51,7 @@
 
 	  <!-- e.g., 0.0 0.8 0.8 0.0 -->
 	  <InstantaneousRateMatrix id="InstantaneousRateMatrix" spec="biogeo.InstantaneousRateMatrix" NumberOfStates="2">
-	    <parameter id="FlatQMatrix" dimension="4" lower="0.0" minordimension="2" name="FlatQMatrix" upper="1.0">[Initial transition rate values]</parameter>
+	    <parameter id="FlatQMatrix" dimension="4" lower="0.0" minordimension="2" name="FlatQMatrix" upper="1e10">[Initial transition rate values]</parameter>
 	  </InstantaneousRateMatrix>
 
 	  <!-- 0.222222 0.222222 -->
