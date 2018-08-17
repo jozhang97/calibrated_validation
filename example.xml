@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<beast namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood" required="BEAST v2.5.0" version="2.5">
+
+  <run id="mcmc" spec="MCMC" chainLength="5000000">
+    <state id="state" storeEvery="50000">
+      <stateNode idref="Lambda"/>
+      <stateNode idref="Mu"/>
+      <stateNode idref="FlatQMatrix"/>
+    </state>
+
+    <distribution id="posterior" spec="util.CompoundDistribution">   
+
+      <!-- START prior -->
+      <distribution id="prior" spec="util.CompoundDistribution">
+        <distribution id="LambdaPrior" spec="beast.math.distributions.Prior" x="@Lambda">
+          <distr id="LogNormal.Lambda" spec="beast.math.distributions.LogNormalDistributionModel" offset="0.0" meanInRealSpace="false">
+            <parameter name="M" value="0.0" estimate="false"/> <!-- e.g., 0.1 -->
+            <parameter name="S" value="0.05" estimate="false"/> <!-- e.g., 0.05 -->
+          </distr>
+        </distribution>
+
+        <distribution id="MuPrior" spec="beast.math.distributions.Prior" x="@Mu">
+          <distr id="LogNormal.Mu" spec="beast.math.distributions.LogNormalDistributionModel" offset="0.0" meanInRealSpace="false">
+            <parameter name="M" value="0.0" estimate="false"/> <!-- e.g., 0.1 -->
+            <parameter name="S" value="0.05" estimate="false"/> <!-- e.g., 0.05 -->
+          </distr>
+        </distribution>
+
+        <distribution id="FlatQMatrixPrior" spec="beast.math.distributions.Prior" x="@FlatQMatrix">
+          <distr id="LogNormal.FlatQMatrix" spec="beast.math.distributions.LogNormalDistributionModel" offset="0.0" meanInRealSpace="false">
+	    <parameter name="M" value="0.0" estimate="false"/> <!-- e.g., 0.1 -->
+	    <parameter name="M" value="0.05" estimate="false"/> <!-- e.g., 0.05 -->
+        </distribution>
+      </distribution>
+      <!-- END prior -->
+
+      <distribution id="likelihood" spec="util.CompoundDistribution" useThreads="true">
+	<distribution id="StateDependentSpeciationExtinctionProcess" spec="biogeo.StateDependentSpeciationExtinctionProcess" IncorporateCladogenesis="true">
+	  <TreeParser id="TreeParser" spec="beast.util.TreeParser" IsLabelledNewick="true" adjustTipHeights="false" newick="(sp22:0.8865821091,(sp25:0.3051001472,sp23:0.3051001472)nd23:0.5814819619)nd20;" offset="0" singlechild="false"> <!-- e.g., ((Human:1.0,Chimp:1.0):1.0,Gorilla:2.0); -->
+	    <taxonset id="TaxonSet" spec="TaxonSet">
+	        <!-- e.g., <taxon id="Sp1" spec="Taxon"/> -->
+	        <taxon id="sp22" spec="Taxon"/>
+ 	 	 	<taxon id="sp23" spec="Taxon"/>
+ 	 	 	<taxon id="sp25" spec="Taxon"/>
+ 	 	 	
+	    </taxonset>
+	  </TreeParser>
+
+	  <!-- e.g., "Sp1=1,Sp2=1,..." -->
+	  <TraitStash id="TraitStash" spec="biogeo.TraitStash" value="sp22=0,sp23=0,sp25=0" NumberOfStates="2">
+	    <taxa idref="TaxonSet"/>
+	  </TraitStash>
+
+	  <!-- e.g., 0.0 0.8 0.8 0.0 -->
+	  <InstantaneousRateMatrix id="InstantaneousRateMatrix" spec="biogeo.InstantaneousRateMatrix" NumberOfStates="2">
+	    <parameter id="FlatQMatrix" dimension="4" lower="0.0" minordimension="2" name="FlatQMatrix" upper="1.0">-1.0581029603 1.05810296030195 1.02231944490931 -1.02231944491 </parameter>
+	  </InstantaneousRateMatrix>
+
+	  <!-- 0.222222 0.222222 -->
+	  <Lambda id="Lambda" dimension="2" spec="parameter.RealParameter">0.981510982713324 1.00534907574903 </Lambda>
+
+	  <!-- e.g., 0.1 0.1 -->
+	  <Mu id="Mu" dimension="2" spec="parameter.RealParameter">1.13301244628411 1.00742884626939 </Mu>
+
+	  <!-- e.g., 0.0 0.0 0.5 0.5 -->
+	  <Pi id="Pi" dimension="4" spec="parameter.RealParameter">0.0 0.0 0.5 0.5</Pi>
+	</distribution> <!-- END SSE -->
+      </distribution> <!-- END Likelihood -->
+    </distribution> <!-- END Posterior -->
+
+    <operator id="LambdaScaler" spec="ScaleOperator" parameter="@Lambda" scaleFactor="0.75" weight="3.0"/>
+    <operator id="MuScaler" spec="ScaleOperator" parameter="@Mu" scaleFactor="0.75" weight="3.0"/>
+    <operator id="FlatQMatrixScaler" spec="ScaleOperator" parameter="@FlatQMatrix" scaleFactor="0.75" weight="3.0"/>
+
+    <logger id="tracelog" fileName="StateDependentSpeciationExtinctionProcess.log" logEvery="5000" model="@posterior" sanitiseHeaders="true" sort="smart">
+        <log idref="posterior"/>
+        <log idref="likelihood"/>
+        <log idref="prior"/>
+	<log idref="Lambda"/>
+        <log idref="Mu"/>
+        <log idref="FlatQMatrix"/>
+    </logger>
+
+    <logger id="screenlog" logEvery="10000">
+        <log idref="posterior"/>
+        <log id="ESS.0" spec="util.ESS" arg="@posterior"/>
+        <log idref="likelihood"/>
+        <log idref="prior"/>
+    </logger>
+
+    <logger id="treelog.t:firsthalf" fileName="StateDependentSpeciationExtinctionProcess.trees" logEvery="10000" mode="tree">
+        <log id="TreeWithMetaDataLogger" spec="beast.evolution.tree.TreeWithMetaDataLogger" tree="@TreeParser"/>
+    </logger>
+  </run>
+</beast>
