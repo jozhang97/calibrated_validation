@@ -36,31 +36,58 @@
 
       <distribution id="likelihood" spec="util.CompoundDistribution" useThreads="true">
 	<distribution id="StateDependentSpeciationExtinctionProcess" spec="biogeo.StateDependentSpeciationExtinctionProcess" IncorporateCladogenesis="true">
-	  <TreeParser id="TreeParser" spec="beast.util.TreeParser" IsLabelledNewick="true" adjustTipHeights="false" newick="(sp22:0.8865821091,(sp25:0.3051001472,sp23:0.3051001472)nd23:0.5814819619)nd20;" offset="0" singlechild="false"> <!-- e.g., ((Human:1.0,Chimp:1.0):1.0,Gorilla:2.0); -->
+	  <TreeParser id="TreeParser" spec="beast.util.TreeParser" IsLabelledNewick="true" adjustTipHeights="false" newick="((((((sp98:1.572475827,sp110:1.572475827)nd101:0.3260329159,(sp127:0.5857635249,(sp138:0.134260058,sp139:0.134260058)nd135:0.4515034669)nd112:1.312745218)nd95:1.097396872,(((sp131:0.2782678812,sp132:0.2782678812)nd132:0.479562388,sp111:0.7578302692)nd131:0.6547153318,(sp136:0.1753033086,sp137:0.1753033086)nd119:1.237242292)nd98:1.583360014)nd67:0.05592754681,(sp94:2.467799084,((sp116:0.6812083674,sp114:0.6812083674)nd99:1.72267398,((sp133:0.2781995042,sp134:0.2781995042)nd140:0.02779735283,(sp140:0.08560684112,sp141:0.08560684112)nd141:0.2203900159)nd111:2.09788549)nd83:0.06391673686)nd74:0.5840340778)nd54:1.629035201,(sp106:1.196259671,(((sp124:0.3449300567,sp125:0.3449300567)nd129:0.5743701443,((sp129:0.2873200221,sp130:0.2873200221)nd139:0.0256493672,sp128:0.3129693893)nd130:0.6063308118)nd125:0.2196907751,(sp119:1.028230369,sp123:1.028230369)nd126:0.1107606069)nd124:0.0572686953)nd116:3.484608691)nd43:1.695467165,(sp83:6.351675673,(sp118:0.4615207003,((sp142:0.05320732827,sp143:0.05320732827)nd142:0.1249688918,sp135:0.17817622)nd137:0.2833444803)nd136:5.890154973)nd29:0.02465985445)nd27;" offset="0" singlechild="false"> <!-- e.g., ((Human:1.0,Chimp:1.0):1.0,Gorilla:2.0); -->
 	    <taxonset id="TaxonSet" spec="TaxonSet">
 	        <!-- e.g., <taxon id="Sp1" spec="Taxon"/> -->
-	        <taxon id="sp22" spec="Taxon"/>
- 	 	 	<taxon id="sp23" spec="Taxon"/>
- 	 	 	<taxon id="sp25" spec="Taxon"/>
+	        <taxon id="sp83" spec="Taxon"/>
+ 	 	 	<taxon id="sp94" spec="Taxon"/>
+ 	 	 	<taxon id="sp98" spec="Taxon"/>
+ 	 	 	<taxon id="sp106" spec="Taxon"/>
+ 	 	 	<taxon id="sp110" spec="Taxon"/>
+ 	 	 	<taxon id="sp111" spec="Taxon"/>
+ 	 	 	<taxon id="sp114" spec="Taxon"/>
+ 	 	 	<taxon id="sp116" spec="Taxon"/>
+ 	 	 	<taxon id="sp118" spec="Taxon"/>
+ 	 	 	<taxon id="sp119" spec="Taxon"/>
+ 	 	 	<taxon id="sp123" spec="Taxon"/>
+ 	 	 	<taxon id="sp124" spec="Taxon"/>
+ 	 	 	<taxon id="sp125" spec="Taxon"/>
+ 	 	 	<taxon id="sp127" spec="Taxon"/>
+ 	 	 	<taxon id="sp128" spec="Taxon"/>
+ 	 	 	<taxon id="sp129" spec="Taxon"/>
+ 	 	 	<taxon id="sp130" spec="Taxon"/>
+ 	 	 	<taxon id="sp131" spec="Taxon"/>
+ 	 	 	<taxon id="sp132" spec="Taxon"/>
+ 	 	 	<taxon id="sp133" spec="Taxon"/>
+ 	 	 	<taxon id="sp134" spec="Taxon"/>
+ 	 	 	<taxon id="sp135" spec="Taxon"/>
+ 	 	 	<taxon id="sp136" spec="Taxon"/>
+ 	 	 	<taxon id="sp137" spec="Taxon"/>
+ 	 	 	<taxon id="sp138" spec="Taxon"/>
+ 	 	 	<taxon id="sp139" spec="Taxon"/>
+ 	 	 	<taxon id="sp140" spec="Taxon"/>
+ 	 	 	<taxon id="sp141" spec="Taxon"/>
+ 	 	 	<taxon id="sp142" spec="Taxon"/>
+ 	 	 	<taxon id="sp143" spec="Taxon"/>
  	 	 	
 	    </taxonset>
 	  </TreeParser>
 
 	  <!-- e.g., "Sp1=1,Sp2=1,..." -->
-	  <TraitStash id="TraitStash" spec="biogeo.TraitStash" value="sp22=0,sp23=0,sp25=0" NumberOfStates="2">
+	  <TraitStash id="TraitStash" spec="biogeo.TraitStash" value="sp83=0,sp94=1,sp98=1,sp106=0,sp110=1,sp111=1,sp114=1,sp116=1,sp118=1,sp119=1,sp123=0,sp124=0,sp125=1,sp127=0,sp128=1,sp129=0,sp130=1,sp131=1,sp132=1,sp133=0,sp134=0,sp135=1,sp136=0,sp137=0,sp138=0,sp139=1,sp140=0,sp141=0,sp142=1,sp143=1" NumberOfStates="2">
 	    <taxa idref="TaxonSet"/>
 	  </TraitStash>
 
 	  <!-- e.g., 0.0 0.8 0.8 0.0 -->
 	  <InstantaneousRateMatrix id="InstantaneousRateMatrix" spec="biogeo.InstantaneousRateMatrix" NumberOfStates="2">
-	    <parameter id="FlatQMatrix" dimension="4" lower="0.0" minordimension="2" name="FlatQMatrix" upper="1.0">-1.0581029603 1.05810296030195 1.02231944490931 -1.02231944491 </parameter>
+	    <parameter id="FlatQMatrix" dimension="4" lower="0.0" minordimension="2" name="FlatQMatrix" upper="1.0">-0.954733971492 0.954733971491713 1.06015814766462 -1.06015814766 </parameter>
 	  </InstantaneousRateMatrix>
 
 	  <!-- 0.222222 0.222222 -->
-	  <Lambda id="Lambda" dimension="2" spec="parameter.RealParameter">0.981510982713324 1.00534907574903 </Lambda>
+	  <Lambda id="Lambda" dimension="2" spec="parameter.RealParameter">0.910692379759728 1.00701608612659 </Lambda>
 
 	  <!-- e.g., 0.1 0.1 -->
-	  <Mu id="Mu" dimension="2" spec="parameter.RealParameter">1.13301244628411 1.00742884626939 </Mu>
+	  <Mu id="Mu" dimension="2" spec="parameter.RealParameter">1.03538035483891 1.00960761080826 </Mu>
 
 	  <!-- e.g., 0.0 0.0 0.5 0.5 -->
 	  <Pi id="Pi" dimension="4" spec="parameter.RealParameter">0.0 0.0 0.5 0.5</Pi>
