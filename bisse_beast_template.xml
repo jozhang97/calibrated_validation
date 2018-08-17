@@ -17,29 +17,29 @@
             <parameter name="M" value=[Mean Lambda Prior] estimate="false"/> <!-- e.g., 0.1 -->
             <parameter name="S" value=[Stdev Lambda Prior] estimate="false"/> <!-- e.g., 0.05 -->
           </distr>
-        </distribution>               
-        
-        <distribution id="MuPrior" spec="beast.math.distributions.Prior" x="@Mu"> 
+        </distribution>
+
+        <distribution id="MuPrior" spec="beast.math.distributions.Prior" x="@Mu">
           <distr id="LogNormal.Mu" spec="beast.math.distributions.LogNormalDistributionModel" offset="0.0" meanInRealSpace="false">
             <parameter name="M" value=[Mean Mu Prior] estimate="false"/> <!-- e.g., 0.1 -->
             <parameter name="S" value=[Stdev Mu Prior] estimate="false"/> <!-- e.g., 0.05 -->
           </distr>
         </distribution>
-            
-        <distribution id="FlatQMatrixPrior" spec="beast.math.distributions.Prior" x="@FlatQMatrix"> 
+
+        <distribution id="FlatQMatrixPrior" spec="beast.math.distributions.Prior" x="@FlatQMatrix">
           <distr id="LogNormal.FlatQMatrix" spec="beast.math.distributions.LogNormalDistributionModel" offset="0.0" meanInRealSpace="false">
 	    <parameter name="M" value=[Mean FlatQMatrix Prior] estimate="false"/> <!-- e.g., 0.1 -->
 	    <parameter name="M" value=[Stdev FlatQMatrix Prior] estimate="false"/> <!-- e.g., 0.05 -->
         </distribution>
       </distribution>
       <!-- END prior -->
-        
+
       <distribution id="likelihood" spec="util.CompoundDistribution" useThreads="true">
 	<distribution id="StateDependentSpeciationExtinctionProcess" spec="biogeo.StateDependentSpeciationExtinctionProcess" IncorporateCladogenesis="true">
 	  <TreeParser id="TreeParser" spec="beast.util.TreeParser" IsLabelledNewick="true" adjustTipHeights="false" newick="[Tree in newick format]" offset="0" singlechild="false"> <!-- e.g., ((Human:1.0,Chimp:1.0):1.0,Gorilla:2.0); -->
 	    <taxonset id="TaxonSet" spec="TaxonSet">
-	      <!-- e.g., <taxon id="Sp1" spec="Taxon"/> -->
-	      [List of species]
+	        <!-- e.g., <taxon id="Sp1" spec="Taxon"/> -->
+	        [List of species]
 	    </taxonset>
 	  </TreeParser>
 

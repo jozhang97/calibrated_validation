@@ -89,9 +89,6 @@ if (length(args) < 6) {
 params.df <- sample.parameters(output.dir, prefix, n.sim, mu, std, param.names) # table with all parameters for all simulations
 init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mu, std, param.names) # table with all parameters for all simulations
 write.table(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
-print(mu)
-print(std)
-# TODO Write the mu, std to file
 # --- END: Prior sampling stuff --- #
 
 # --- START: Simulations --- #

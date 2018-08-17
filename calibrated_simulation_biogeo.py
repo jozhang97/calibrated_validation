@@ -6,31 +6,33 @@ import argparse
 import numpy as np
 
 def convert_to_species_list(tip_states):
-    # TODO is this right info we want?
     def construct_taxon_xml(tip_name):
         taxon = "<taxon id=\""
         taxon += tip_name
-        taxon += "\" spec=\"Taxon\"/> \n"
+        taxon += "\" spec=\"Taxon\"/>"
         return taxon
 
     taxon_set = ""
     for tip_state in tip_states.split(","):
         tip_name = tip_state.split("=")[0]
         taxon_set += construct_taxon_xml(tip_name)
+        taxon_set += "\n \t \t \t"
 
     return taxon_set
 
 def convert_to_rate_matrix(q):
     # solve n * n - n = len(q)
     if len(q) == 2:  # BiSSE
-        return [-1*q[0], q[0], q[1], -1*q[1]] # TODO is this right?
-    roots = np.roots(1, -1, len(q))
-    n = max(roots)  # not sure
+        return [-1*eval(q[0]), q[0], q[1], -1*eval(q[1])] # TODO is this right numbers?
+    raise NotImplementedError
+    #roots = np.roots(1, -1, len(q))
+    #n = max(roots)  # not sure
     # TODO ... this is kinda annoying, keep looking for a library
 
 class CsvInfoStash:
-    def __init__(self, init_params, tree, n_tips, tip_states):
+    def __init__(self, init_params, prior_params, tree, n_tips, tip_states):
         self.init_params = init_params
+        self.prior_params = prior_params
         self.tree = tree
         self.n_tips = n_tips
         self.tip_states = tip_states
@@ -47,14 +49,13 @@ class CsvInfoStash:
         replacements_str = ""
         if type(replacements) == type([]):
             for replacement in replacements:
-                replacements_str += str(replacement)
+                replacements_str += str(replacement) + " "
         else:
             replacements_str += str(replacements)
 
         if quoted:
             replacements_str = "\"" + replacements_str + "\""
 
-        print(replacements_str)
         self.xml = self.xml.replace(key, replacements_str)
 
     def populate_xml(self, xml_template):
@@ -65,18 +66,18 @@ class CsvInfoStash:
         #    self.replace_in_xml(key, "foo")
         self.update_xml(xml_template)
 
-        self.replace_in_xml("[Mean Lambda Prior]", "0", quoted=True) # TODO Add these guys to the .csv
-        self.replace_in_xml("[Stdev Lambda Prior]", "0.1", quoted=True)
-        self.replace_in_xml("[Mean Mu Prior]", "0", quoted=True)
-        self.replace_in_xml("[Stdev Mu Prior]", "0.1", quoted=True)
-        self.replace_in_xml("[Mean FlatQMatrix Prior]", "0", quoted=True)
-        self.replace_in_xml("[Stdev FlatQMatrix Prior]", "0.1", quoted=True)
+        self.replace_in_xml("[Mean Lambda Prior]", self.prior_params[0], quoted=True)
+        self.replace_in_xml("[Stdev Lambda Prior]", self.prior_params[1], quoted=True)
+        self.replace_in_xml("[Mean Mu Prior]", self.prior_params[2], quoted=True)
+        self.replace_in_xml("[Stdev Mu Prior]", self.prior_params[3], quoted=True)
+        self.replace_in_xml("[Mean FlatQMatrix Prior]", self.prior_params[4], quoted=True)
+        self.replace_in_xml("[Stdev FlatQMatrix Prior]", self.prior_params[5], quoted=True)
         self.replace_in_xml("[Tree in newick format]", self.tree)
         self.replace_in_xml("[List of species]", convert_to_species_list(self.tip_states))
         self.replace_in_xml("[Initial transition rate values]", convert_to_rate_matrix(self.init_params[4:6]))
         self.replace_in_xml("[Initial lambda values]", self.init_params[0:2])
         self.replace_in_xml("[Initial mu values]", self.init_params[2:4])
-        self.replace_in_xml("[Pi values]", "0")  # TODO What's PI
+        self.replace_in_xml("[Pi values]", "0.0 0.0 0.5 0.5")
         self.replace_in_xml("[Species=Trait State]", self.tip_states)
 
     def write_xml(self, file_name):
@@ -104,24 +105,24 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
         cmd_classe = cmd_1 + param_names
         subprocess.call(cmd_classe)
 
-def parse_simulations(output_dir, xml_dir, xml_template_name, prefix):
+def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_params):
     """ Parse .csv file into .xmls """
     csv_info_stashs = []
 
     csv_tree = output_dir + "data_param_tree.csv"
     csv_inits = output_dir + "data_param_inits.csv"
     with open(csv_tree) as tree_file, open(csv_inits) as inits_file:
-        tree_reader = csv.reader(tree_file, delimiter='|')  # TODO The format of the tree data needs to be changed since newick uses , and ;
+        tree_reader = csv.reader(tree_file, delimiter='|')  # The format of the data has been changed since newick uses , and ;
         inits_reader = csv.reader(inits_file, delimiter='|')
         for i, (tree_row, init_params) in enumerate(zip(tree_reader, inits_reader)):
             if i == 0: # ignore first line since its the headers
                 continue
-            true_params = tree_row[:-3]  # These will not be used as they are what we are estimating
+            true_params = tree_row[:6]  # These will not be used as they are what we are estimating
             tree = tree_row[-3]
             n_tips = tree_row[-2]
             tip_states = tree_row[-1]
 
-            csv_info_stash = CsvInfoStash(init_params, tree, n_tips, tip_states)
+            csv_info_stash = CsvInfoStash(init_params, prior_params, tree, n_tips, tip_states)
             csv_info_stashs.append(csv_info_stash)
 
 
@@ -165,4 +166,5 @@ if __name__ == "__main__":
 
     simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.mu, args.std) # calls R script, produces .csv files and plots
 
-    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix) # parses .csv into .xml files
+    prior_params = [args.mu, args.std] * 3
+    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, prior_params) # parses .csv into .xml files
