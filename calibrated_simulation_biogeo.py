@@ -16,7 +16,7 @@ def convert_to_species_list(tip_states):
     for tip_state in tip_states.split(","):
         tip_name = tip_state.split("=")[0]
         taxon_set += construct_taxon_xml(tip_name)
-        taxon_set += "\n \t \t \t"
+        taxon_set += "\n \t \t"
 
     return taxon_set
 

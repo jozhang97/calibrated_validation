@@ -130,7 +130,7 @@ for (i in 1:nrow(params.df)) {
         params.df[i,"tree"] = write.tree(phy)
         params.df[i,"ntips"] = length(phy$tip.state)
         params.df[i,"tipstates"] = paste(
-            paste(names(phy$tip.state), phy$tip.state, sep="="),
+            paste(names(phy$tip.state), phy$tip.state + 1, sep="="), # need to index by 1 
             collapse=",")
 
         if (simulated.trees == 100) {
