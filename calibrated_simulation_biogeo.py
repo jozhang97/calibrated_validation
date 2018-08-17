@@ -3,6 +3,15 @@ import os
 import subprocess
 import csv
 import argparse
+import numpy as np
+
+def rateMatrix(q):
+    # solve n * n - n = len(q)
+    if len(q) == 2:  # BiSSE
+        return [q[0], q[0], q[1], q[1]] # TODO is this right?
+    roots = np.roots(1, -1, len(q))
+    n = max(roots)  # not sure
+    # TODO ... this is kinda annoying, keep looking for a library
 
 class CsvInfoStash:
     def __init__(self, init_params, tree, n_tips, tip_states):
@@ -10,15 +19,50 @@ class CsvInfoStash:
         self.tree = tree
         self.n_tips = n_tips
         self.tip_states = tip_states
+        self.xml = ""
+
+    def update_xml(self, xml_template):
+        self.xml = xml_template
+
+    def replace_in_xml(self, key, replacements, quoted=False):
+        # key: Keyword to look for in xml
+        # replacements: list of objects (with __str__ implemented) to replace with
+        #               OR a single object
+        # quoted: if True, adds quotes to the string
+        replacements_str = ""
+        if type(replacements) == type([]):
+            for replacement in replacements:
+                replacements_str += str(replacement)
+        else:
+            replacements_str += str(replacements)
+
+        if quoted:
+            replacements_str = "\"" + replacements_str + "\""
+
+        print(replacements_str)
+        self.xml = self.xml.replace(key, replacements_str)
 
     def populate_xml(self, xml_template):
-        # TODO
-        self.xml = xml_template
-        keys = ["[Mean Lambda Prior]", "[Stdev Lambda Prior]", "[Mean Mu Prior]",
-                "[Stdev Mu Prior]", "[Mean FlatQMatrix Prior]", "[Stdev FlatQMatrix Prior]", "[Tree in newick format]", "[List of species]",
-                "[Initial transition rate values]", "[Initial lambda values]", "[Initial mu values]", "[Pi values]", "[Species=Trait State]"]
-        for key in keys:
-            self.xml = self.xml.replace(key, "foo")
+        #keys = ["[Mean Lambda Prior]", "[Stdev Lambda Prior]", "[Mean Mu Prior]",
+        #        "[Stdev Mu Prior]", "[Mean FlatQMatrix Prior]", "[Stdev FlatQMatrix Prior]", "[Tree in newick format]", "[List of species]",
+        #        "[Initial transition rate values]", "[Initial lambda values]", "[Initial mu values]", "[Pi values]", "[Species=Trait State]"]
+        #for key in keys:
+        #    self.replace_in_xml(key, "foo")
+        self.update_xml(xml_template)
+
+        self.replace_in_xml("[Mean Lambda Prior]", "0", quoted=True) # TODO Add these guys to the .csv
+        self.replace_in_xml("[Stdev Lambda Prior]", "0.1", quoted=True)
+        self.replace_in_xml("[Mean Mu Prior]", "0", quoted=True)
+        self.replace_in_xml("[Stdev Mu Prior]", "0.1", quoted=True)
+        self.replace_in_xml("[Mean FlatQMatrix Prior]", "0", quoted=True)
+        self.replace_in_xml("[Stdev FlatQMatrix Prior]", "0.1", quoted=True)
+        self.replace_in_xml("[Tree in newick format]", self.tree)
+        self.replace_in_xml("[List of species]", self.tip_states)  # TODO What's happening here? whats spec <taxon id="Sp1" spec="Taxon"/>
+        self.replace_in_xml("[Initial transition rate values]", self.init_params[4:6]) # TODO Convert to matrix
+        self.replace_in_xml("[Initial lambda values]", self.init_params[0:2])
+        self.replace_in_xml("[Initial mu values]", self.init_params[2:4])
+        self.replace_in_xml("[Pi values]", "0")  # TODO What's PI
+        self.replace_in_xml("[Species=Trait State]", self.tip_states)
 
     def write_xml(self, file_name):
         with open(file_name, "w") as f:
@@ -52,8 +96,8 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix):
     csv_tree = output_dir + "data_param_tree.csv"
     csv_inits = output_dir + "data_param_inits.csv"
     with open(csv_tree) as tree_file, open(csv_inits) as inits_file:
-        tree_reader = csv.reader(tree_file, delimiter=',')
-        inits_reader = csv.reader(inits_file, delimiter=',')
+        tree_reader = csv.reader(tree_file, delimiter='|')  # TODO The format of the tree data needs to be changed since newick uses , and ;
+        inits_reader = csv.reader(inits_file, delimiter='|')
         for i, (tree_row, init_params) in enumerate(zip(tree_reader, inits_reader)):
             if i == 0: # ignore first line since its the headers
                 continue

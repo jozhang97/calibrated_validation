@@ -88,7 +88,7 @@ if (length(args) < 6) {
 
 params.df <- sample.parameters(output.dir, prefix, n.sim, mu, std, param.names) # table with all parameters for all simulations
 init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mu, std, param.names) # table with all parameters for all simulations
-write.csv(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE)
+write.table(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
 # --- END: Prior sampling stuff --- #
 
 # --- START: Simulations --- #
@@ -131,7 +131,7 @@ for (i in 1:nrow(params.df)) {
         params.df[i,"ntips"] = length(phy$tip.state)
         params.df[i,"tipstates"] = paste(
             paste(names(phy$tip.state), phy$tip.state, sep="="),
-            collapse="_")
+            collapse=",")
 
         if (simulated.trees == 100) {
             plot.ntips(params.df[!is.na(params.df$"tree"),]) # plotting ntips.pdf
@@ -139,7 +139,7 @@ for (i in 1:nrow(params.df)) {
         }
     }
 }
-write.csv(params.df[!is.na(params.df$"tree"),], file=paste0(output.dir, "data_param_tree.csv"),
-          row.names=FALSE, quote=FALSE)
-write.csv(params.df[is.na(params.df$"tree"),], file=paste0(output.dir, "discarded_param_tree.csv"),
-          row.names=FALSE, quote=FALSE)
+write.table(params.df[!is.na(params.df$"tree"),], file=paste0(output.dir, "data_param_tree.csv"),
+          row.names=FALSE, quote=FALSE, sep="|")
+write.table(params.df[is.na(params.df$"tree"),], file=paste0(output.dir, "discarded_param_tree.csv"),
+          row.names=FALSE, quote=FALSE, sep="|")
