@@ -5,10 +5,13 @@ import csv
 import argparse
 import numpy as np
 
-def rateMatrix(q):
+def convert_to_species_list(tip_states):
+    pass
+
+def convert_to_rate_matrix(q):
     # solve n * n - n = len(q)
     if len(q) == 2:  # BiSSE
-        return [q[0], q[0], q[1], q[1]] # TODO is this right?
+        return [-1*q[0], q[0], q[1], -1*q[1]] # TODO is this right?
     roots = np.roots(1, -1, len(q))
     n = max(roots)  # not sure
     # TODO ... this is kinda annoying, keep looking for a library
@@ -57,8 +60,8 @@ class CsvInfoStash:
         self.replace_in_xml("[Mean FlatQMatrix Prior]", "0", quoted=True)
         self.replace_in_xml("[Stdev FlatQMatrix Prior]", "0.1", quoted=True)
         self.replace_in_xml("[Tree in newick format]", self.tree)
-        self.replace_in_xml("[List of species]", self.tip_states)  # TODO What's happening here? whats spec <taxon id="Sp1" spec="Taxon"/>
-        self.replace_in_xml("[Initial transition rate values]", self.init_params[4:6]) # TODO Convert to matrix
+        self.replace_in_xml("[List of species]", convert_to_species_list(self.tip_states))  # TODO What's happening here? whats spec <taxon id="Sp1" spec="Taxon"/>
+        self.replace_in_xml("[Initial transition rate values]", convert_to_rate_matrix(self.init_params[4:6]))
         self.replace_in_xml("[Initial lambda values]", self.init_params[0:2])
         self.replace_in_xml("[Initial mu values]", self.init_params[2:4])
         self.replace_in_xml("[Pi values]", "0")  # TODO What's PI
