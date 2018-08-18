@@ -49,7 +49,7 @@ sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     return(list(prior.samples.plot, df))
 }
 
-sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names) {
+sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names, plot.flag) {
     num_params = length(param.names)
     params = vector("list", length = num_params)
     plots = vector("list", length = num_params)
@@ -66,10 +66,12 @@ sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names) {
     save.path = paste(paste0(output.dir, prefix), "all_params.csv", sep="_")
 
     # printing all panels in single graph (png() won't work)
-    cat("Plotting prior_samples.pdf\n")
-    pdf(paste0(output.dir, "prior_samples.pdf"), width=6, height=7)
-    plot_grid(plots)
-    dev.off()
+    if (plot.flag) {
+        cat("Plotting prior_samples.pdf\n")
+        pdf(paste0(output.dir, "prior_samples.pdf"), width=6, height=7)
+        plot_grid(plots)
+        dev.off()
+    }
 
     return(params.df)
 }
@@ -86,8 +88,8 @@ if (length(args) < 6) {
   print("Not enough args. Output directory, Prefix, Num simulations, mu, sigma, parameter names")
 }
 
-params.df <- sample.parameters(output.dir, prefix, n.sim, mu, std, param.names) # table with all parameters for all simulations
-init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mu, std, param.names) # table with all parameters for all simulations
+params.df <- sample.parameters(output.dir, prefix, n.sim, mu, std, param.names, TRUE) # table with all true parameters for all simulations
+init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mu, std, param.names, FALSE) # table with all initialization (for .xml) parameters for all simulations
 write.table(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
 # --- END: Prior sampling stuff --- #
 

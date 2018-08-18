@@ -5,6 +5,6 @@
 
 1) BiSSE: drawing parameter samples from prior, simulating trees and making .xmls    
 
-    ``python calibrated_simulation_biogeo.py -rd ./ -od csvs_plots/ -xd xmls/ -xt bisse_beast_template.xml -p test -n 2000 -m 0.1 -sd 0.05 -b True -st 14``    
+    ``python calibrated_simulation_biogeo.py -od csvs_plots/ -m 0.15 -sd 0.05 -p bisse -xd bisse_xmls/ -xt bisse_beast_template.xml -n 2000``    
 
 1.1) (TO-DO) Submitting BEAST jobs
