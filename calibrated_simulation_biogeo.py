@@ -3,6 +3,7 @@ import os
 import subprocess
 import csv
 import argparse
+import re
 import numpy as np
 
 def convert_to_species_list(tip_states):
@@ -38,12 +39,15 @@ class CsvInfoStash:
         self.tip_states = tip_states
         self.output_dir = output_dir
         self.prefix = prefix
-        self.xml = ""
+        self.xml = str()
         self.idx = idx # which simulation it is
         
     def update_xml(self, xml_template):
         self.xml = xml_template
 
+    def update_cluster_path(self, cluster_path):
+        self.cluster_path = cluster_path
+        
     def replace_in_xml(self, key, replacements, quoted=False):
         """ Fill out xml template
         
@@ -64,7 +68,7 @@ class CsvInfoStash:
 
         self.xml = self.xml.replace(key, replacements_str)
 
-    def populate_xml(self, xml_template):
+    def populate_xml(self, xml_template, cluster_path):
         """
         keys = [
         "[Mean Lambda Prior]",
@@ -83,6 +87,7 @@ class CsvInfoStash:
         ]
         """
         self.update_xml(xml_template) # initialize xml member
+        self.update_cluster_path(cluster_path) # will add cluster path to BEAST output files if defined
 
         self.replace_in_xml("[Mean Lambda Prior]", self.prior_params[0], quoted=True)
         self.replace_in_xml("[Stdev Lambda Prior]", self.prior_params[1], quoted=True)
@@ -97,8 +102,12 @@ class CsvInfoStash:
         self.replace_in_xml("[Initial mu values]", self.init_params[2:4])
         self.replace_in_xml("[Pi values]", "0.0 0.0 0.5 0.5")
         self.replace_in_xml("[Species=Trait State]", self.tip_states)
-        self.replace_in_xml("[Simulation log file name]", "beast_outputs/" + self.prefix + str(self.idx) + "_sim_log.log")
-        self.replace_in_xml("[Simulation tree file name]", "beast_outputs/" + self.prefix + str(self.idx) + "_sim_trees.trees")
+
+        beast_output_path = "beast_outputs/"
+        if self.cluster_path:
+            beast_output_path = cluster_path + "beast_outputs/"
+        self.replace_in_xml("[Simulation log file name]", beast_output_path + self.prefix + str(self.idx) + "_sim.log")
+        self.replace_in_xml("[Simulation tree file name]", beast_output_path + self.prefix + str(self.idx) + "_sim.trees")
 
     def write_xml(self, file_name):
         with open(file_name, "w") as f:
@@ -124,8 +133,9 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
         cmd_classe = cmd + param_names
         subprocess.call(cmd_classe)
 
-def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_params):
+def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_params, cluster_path):
     """ Parse .csv file into .xmls """
+
     csv_info_stashes = list()
 
     csv_true = output_dir + "data_param_tree.csv"
@@ -150,25 +160,39 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_para
 
     # iterating over list of csv_info_stashes 
     for i, csv_info_stash in enumerate(csv_info_stashes):
-        csv_info_stash.populate_xml(xml_template) # fill out xml template
+        csv_info_stash.populate_xml(xml_template, cluster_path) # fill out xml template
         xml_file_name = xml_dir + prefix + str(i+1) + ".xml"
         csv_info_stash.write_xml(xml_file_name)
 
     return
 
+def write_pbs(xml_dir, prefix, cluster_path):
+    """ Write one .pbs script per .xml """
+
+    sim_n_regex = re.compile("[0-9]+")
+    xml_file_names = [f for f in os.listdir(xml_dir) if f.endswith(".xml")]
+    for xml_file_name in xml_file_names:
+        sim_n = re.findall(sim_n_regex, xml_file_name.split("_")[0])[0]
+
+        with open("pbs_scripts/" + prefix + sim_n + ".PBS", "w") as pbs_file:
+            pbs_file.write("#!/bin/bash\n#PBS -N beast_" + sim_n + \
+                           "\n#PBS -l nodes=1:ppn=1,walltime=01:40:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + cluster_path + "biogeo.jar " + \
+                           cluster_path + xml_dir + xml_file_name
+            )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Simulation script", description="Script for performing well-calibrated validation of biogeo package.")
-    parser.add_argument("-rd", "--rscripts-dir", action="store", dest="rscriptsdir", default="./", type=str, help="full file path to r scripts directory.")
-    parser.add_argument("-od", "--output-dir", action="store", dest="outputdir", default="./", type=str, help="full file path to directory where simulations and log files will be saved.")
-    parser.add_argument("-xd", "--xml-dir", action="store", dest="xmldir", default="./", type=str, help="full file path to directory where .xml's will be saved.")
-    parser.add_argument("-n", "--n-sims", action="store", dest="nsims", default=1000, type=int, help="number of simulations.")
+    parser.add_argument("-rd", "--rscripts-dir", action="store", dest="rscriptsdir", default="./", type=str, help="Full file path to r scripts directory.")
+    parser.add_argument("-od", "--output-dir", action="store", dest="outputdir", default="./", type=str, help="Full file path to directory where simulations and log files will be saved.")
+    parser.add_argument("-xd", "--xml-dir", action="store", dest="xmldir", default="./", type=str, help="Full file path to directory where .xml's will be saved.")
+    parser.add_argument("-n", "--n-sims", action="store", dest="nsims", default=1000, type=int, help="Number of simulations.")
     parser.add_argument("-b", "--is-bisse", action="store", dest="bisse", default=True, type=bool, help="Flag for BiSSE simulations (default: True)")
     parser.add_argument("-p", "--prefix", action="store", dest="prefix", default="", type=str, help="Prefix for result files.")
     parser.add_argument("-st", "--sim-time", action="store", dest="simtime", default=10, type=float, help="Time to run simulation.")
     parser.add_argument("-m", "--mu", action="store", dest="mu", default=0, type=float, help="Mean of lognormal dist.")
     parser.add_argument("-sd", "--std", action="store", dest="std", default=0.05, type=float, help="Stdev of lognormal dist.")
     parser.add_argument("-xt", "--xml-template", action="store", dest="xmlt", default=None, type=str, help="Full path to template of .xml file.")
+    parser.add_argument("-cl", "--cluster-path", action="store", dest="cluster", default=None, type=str, help="Full path to calibration folder in cluster if -pbs.")
     args = parser.parse_args()
 
     xml_str = str()
@@ -187,7 +211,12 @@ if __name__ == "__main__":
     if not os.path.exists("beast_outputs"):
         os.makedirs("beast_outputs")
         
-    # simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.mu, args.std) # calls R script, produces .csv files and plots
+    simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.mu, args.std) # calls R script, produces .csv files and plots
 
     prior_params = [args.mu, args.std] * 3
-    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, prior_params) # parses .csv into .xml files
+    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, prior_params, args.cluster) # parses .csv into .xml files
+
+    if args.cluster:
+        if not os.path.exists("pbs_scripts"):
+            os.makedirs("pbs_scripts")
+        write_pbs(args.xmldir, args.prefix, args.cluster)
