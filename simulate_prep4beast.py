@@ -45,8 +45,8 @@ class CsvInfoStash:
     def update_xml(self, xml_template):
         self.xml = xml_template
 
-    def update_cluster_path(self, cluster_path):
-        self.cluster_path = cluster_path
+    def update_project_dir(self, project_dir):
+        self.project_dir = project_dir
         
     def replace_in_xml(self, key, replacements, quoted=False):
         """ Fill out xml template
@@ -68,7 +68,7 @@ class CsvInfoStash:
 
         self.xml = self.xml.replace(key, replacements_str)
 
-    def populate_xml(self, xml_template, cluster_path):
+    def populate_xml(self, xml_template, project_dir):
         """
         keys = [
         "[Mean Lambda Prior]",
@@ -87,7 +87,7 @@ class CsvInfoStash:
         ]
         """
         self.update_xml(xml_template) # initialize xml member
-        self.update_cluster_path(cluster_path) # will add cluster path to BEAST output files if defined
+        self.update_project_dir(project_dir) # will add cluster path to BEAST output files if defined
 
         self.replace_in_xml("[Mean Lambda Prior]", self.prior_params[0], quoted=True)
         self.replace_in_xml("[Stdev Lambda Prior]", self.prior_params[1], quoted=True)
@@ -104,8 +104,8 @@ class CsvInfoStash:
         self.replace_in_xml("[Species=Trait State]", self.tip_states)
 
         beast_output_path = "beast_outputs/"
-        if self.cluster_path:
-            beast_output_path = cluster_path + "beast_outputs/"
+        if self.project_dir:
+            beast_output_path = project_dir + "beast_outputs/"
         self.replace_in_xml("[Simulation log file name]", beast_output_path + self.prefix + str(self.idx) + "_sim.log")
         self.replace_in_xml("[Simulation tree file name]", beast_output_path + self.prefix + str(self.idx) + "_sim.trees")
 
@@ -133,7 +133,7 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
         cmd_classe = cmd + param_names
         subprocess.call(cmd_classe)
 
-def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_params, cluster_path):
+def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_params, project_dir):
     """ Parse .csv file into .xmls """
 
     csv_info_stashes = list()
@@ -160,13 +160,13 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_para
 
     # iterating over list of csv_info_stashes 
     for i, csv_info_stash in enumerate(csv_info_stashes):
-        csv_info_stash.populate_xml(xml_template, cluster_path) # fill out xml template
+        csv_info_stash.populate_xml(xml_template, project_dir) # fill out xml template
         xml_file_name = xml_dir + prefix + str(i+1) + ".xml"
         csv_info_stash.write_xml(xml_file_name)
 
     return
 
-def write_pbs(xml_dir, prefix, cluster_path):
+def write_pbs(xml_dir, prefix, project_dir):
     """ Write one .pbs script per .xml """
 
     sim_n_regex = re.compile("[0-9]+")
@@ -176,8 +176,8 @@ def write_pbs(xml_dir, prefix, cluster_path):
 
         with open("pbs_scripts/" + prefix + sim_n + ".PBS", "w") as pbs_file:
             pbs_file.write("#!/bin/bash\n#PBS -N beast_" + sim_n + \
-                           "\n#PBS -l nodes=1:ppn=1,walltime=01:40:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + cluster_path + "biogeo.jar " + \
-                           cluster_path + xml_dir + xml_file_name
+                           "\n#PBS -l nodes=1:ppn=1,walltime=06:00:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + project_dir + "biogeo.jar " + \
+                           project_dir + xml_dir + xml_file_name
             )
 
 if __name__ == "__main__":
@@ -192,7 +192,7 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--mu", action="store", dest="mu", default=0, type=float, help="Mean of lognormal dist.")
     parser.add_argument("-sd", "--std", action="store", dest="std", default=0.05, type=float, help="Stdev of lognormal dist.")
     parser.add_argument("-xt", "--xml-template", action="store", dest="xmlt", default=None, type=str, help="Full path to template of .xml file.")
-    parser.add_argument("-cl", "--cluster-path", action="store", dest="cluster", default=None, type=str, help="Full path to calibration folder in cluster if -pbs.")
+    parser.add_argument("-pd", "--project-dir", action="store", dest="projdir", default=None, type=str, help="Full path to calibration folder if -pbs.")
     args = parser.parse_args()
 
     xml_str = str()
@@ -219,4 +219,4 @@ if __name__ == "__main__":
     if args.cluster:
         if not os.path.exists("pbs_scripts"):
             os.makedirs("pbs_scripts")
-        write_pbs(args.xmldir, args.prefix, args.cluster)
+        write_pbs(args.xmldir, args.prefix, args.projdir)
