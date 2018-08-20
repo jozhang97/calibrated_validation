@@ -129,11 +129,11 @@ params.df$tree <- NA
 params.df$ntips <- 0
 params.df$tipstates <- NA
 
-## getting prior HDIs
-many.samples.from.prior <- rlnorm(20000, meanlog=mu, sdlog=std)
-prior.hdi = get.95(many.samples.from.prior)
-params.df$hdilower <- prior.hdi[[1]]
-params.df$hdiupper <- prior.hdi[[2]]
+ps <- rlnorm(20000, meanlog=mu, sdlog=std) 
+flat.df = as.vector(ps)
+prior_hdp = get.95(flat.df)
+params.df$hdplower <- prior_hdp[[1]]
+params.df$hdpupper <- prior_hdp[[2]]
 
 ## simulating, storing and printing
 simulated.trees <- 0
