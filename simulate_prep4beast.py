@@ -135,6 +135,7 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, mu, s
 
 def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_params, project_dir):
     """ Parse .csv file into .xmls """
+    NUM_PARAMS = 6
 
     csv_info_stashes = list()
 
@@ -147,10 +148,11 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_para
         # reading data and init csvs at the same time
         for i, (true_row, init_params) in enumerate(zip(true_reader, inits_reader)):
             if i == 0: continue # ignore first line since its the headers
-            true_params = true_row[:6] # these will not be used as they are what we are estimating
-            tree = true_row[-3]
-            n_tips = true_row[-2]
-            tip_states = true_row[-1]
+            true_params = true_row[:NUM_PARAMS] # these will not be used as they are what we are estimating
+            # TODO this indexing may change in the future
+            tree = true_row[NUM_PARAMS]
+            n_tips = true_row[NUM_PARAMS + 1]
+            tip_states = true_row[NUM_PARAMS + 2]
 
             csv_info_stash = CsvInfoStash(init_params, prior_params, tree, n_tips, tip_states, output_dir, prefix, i)
             csv_info_stashes.append(csv_info_stash)
@@ -210,13 +212,13 @@ if __name__ == "__main__":
 
     if not os.path.exists("beast_outputs"):
         os.makedirs("beast_outputs")
-        
+
     simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.mu, args.std) # calls R script, produces .csv files and plots
 
     prior_params = [args.mu, args.std] * 3
-    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, prior_params, args.cluster) # parses .csv into .xml files
+    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, prior_params, args.projdir) # parses .csv into .xml files
 
-    if args.cluster:
+    if args.projdir:
         if not os.path.exists("pbs_scripts"):
             os.makedirs("pbs_scripts")
         write_pbs(args.xmldir, args.prefix, args.projdir)
