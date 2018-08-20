@@ -30,11 +30,13 @@ parse_log <- function(beast.output.folder, burnin.n, csv.folder) {
         }
     }
 
-    df <- data.frame(matrix(unlist(summaries), nrow=100, byrow=T), stringsAsFactors=FALSE)
-    names(df) <- header
-    or <- naturalorder(df$file)
+    df = data.frame(matrix(unlist(summaries), nrow=100, byrow=T), stringsAsFactors=FALSE)
+    names(df) = header
+    or = naturalorder(df$file)
+    df = df[or,]
     ## print(df[or,]) # final result
-    write.csv(df[or,], file=paste0(csv.folder, "hpds.csv"), quote=FALSE, row.names=FALSE)
+    write.csv(df, file=paste0(csv.folder, "hpds.csv"), quote=FALSE, row.names=FALSE)
+    save(df, file=paste0(csv.folder, "hpds.RData"))
 }
 
 parse_log(beast.output.folder, burnin.n, csv.folder)
