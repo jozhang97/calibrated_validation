@@ -124,16 +124,18 @@ plot.ntips <- function(my.df) {
 }
 
 # BiSSE
+## initializing cols in df
 params.df$tree <- NA
 params.df$ntips <- 0
 params.df$tipstates <- NA
 
-# TODO Use more data to calculate the hdp? 
-flat.df = as.vector(params.df)
-prior_hdp = get.95(flat.df)
-params.df$hdplower <- prior_hdp[[1]]
-params.df$hdpupper <- prior_hdp[[2]]
+## getting prior HDIs
+many.samples.from.prior <- rlnorm(20000, meanlog=mu, sdlog=std)
+prior.hdi = get.95(many.samples.from.prior)
+params.df$hdilower <- prior.hdi[[1]]
+params.df$hdiupper <- prior.hdi[[2]]
 
+## simulating, storing and printing
 simulated.trees <- 0
 for (i in 1:nrow(params.df)) {
     pars = unlist(params.df[i,1:6], use.names=FALSE)
