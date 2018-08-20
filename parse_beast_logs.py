@@ -52,7 +52,6 @@ def summarize_validation(csv_dir, param_names1, param_names2):
                 try:
                     prior_lower = float(tokens[true_idxs["hdilower"]])
                     prior_upper = float(tokens[true_idxs["hdiupper"]])
-                    print prior_lower, prior_upper
                 except:
                     exit("Prior HDIs not found. Exiting...\n")
 
@@ -78,11 +77,11 @@ def summarize_validation(csv_dir, param_names1, param_names2):
                 if post_width < prior_width:
                     success_dict[true_param_name]["PostIsNarrower"]  += 1
 
-        print success_dict
-        for k,v in sorted(success_dict.items()):
-            for k2,v2 in v.items():
-                print k, k2, v2/float(total_sims)
-            
+        # print results as table
+        header = "Parameter\t" + "\t".join(success_dict.values()[0].keys())
+        print header
+        for param, summaries_dict in success_dict.items():
+            print param + "\t" + "\t".join([str(v) for v in summaries_dict.values()])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Simulation script", description="Script for parsing BEAST .log files.")
