@@ -50,8 +50,8 @@ def summarize_validation(csv_dir, param_names1, param_names2):
                 prior_upper = float(tokens[true_idxs["hdpupper"]])
             except:
                 print("HDP of prior not given ")
-                prior_lower = 0
-                prior_upper = 0
+                prior_lower = -1
+                prior_upper = -1
 
             for true_param_name in true_params_list:
                 col = true_idxs[true_param_name]
