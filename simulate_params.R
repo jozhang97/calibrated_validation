@@ -2,6 +2,7 @@ library(ggplot2)
 library(gridExtra)
 library(sjPlot)
 library(diversitree)
+library(HDInterval)
 set.seed(1234)
 
 args = commandArgs(trailingOnly=TRUE)
@@ -14,6 +15,11 @@ sim.time <- as.numeric(args[6])
 param.names <- args[7:length(args)]
 
 # --- START: Prior sampling stuff --- #
+get.95 <- function(a.vector) {
+    res = hdi(a.vector, cresMass=.95)
+    return(c(res[[1]], res[[2]]))
+}
+
 sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     # Setting up arbitrary simulation values, and making objects
     ps <- rlnorm(20000, meanlog=mu, sdlog=std) # plotting samples: default mean and sd in log scale, and =0 and 1, respectively
@@ -121,12 +127,19 @@ plot.ntips <- function(my.df) {
 params.df$tree <- NA
 params.df$ntips <- 0
 params.df$tipstates <- NA
+
+# TODO Use more data to calculate the hdp? 
+flat.df = as.vector(params.df)
+prior_hdp = get.95(flat.df)
+params.df$hdplower <- prior_hdp[[1]]
+params.df$hdpupper <- prior_hdp[[2]]
+
 simulated.trees <- 0
 for (i in 1:nrow(params.df)) {
     pars = unlist(params.df[i,1:6], use.names=FALSE)
     phy = tree.bisse(pars, sim.time, max.taxa=1000, include.extinct=FALSE, x0=NA)
 
-    if (!is.null(phy)) {        
+    if (!is.null(phy)) {
         simulated.trees = simulated.trees + 1
         cat(paste0("Simulated ",simulated.trees," trees.\r"))
         params.df[i,"tree"] = write.tree(phy)
