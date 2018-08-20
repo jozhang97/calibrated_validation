@@ -128,8 +128,8 @@ params.df$tree <- NA
 params.df$ntips <- 0
 params.df$tipstates <- NA
 
-# TODO Use more data to calculate the hdp? 
-flat.df = as.vector(params.df)
+ps <- rlnorm(20000, meanlog=mu, sdlog=std) 
+flat.df = as.vector(ps)
 prior_hdp = get.95(flat.df)
 params.df$hdplower <- prior_hdp[[1]]
 params.df$hdpupper <- prior_hdp[[2]]
