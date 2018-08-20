@@ -41,16 +41,16 @@ class CsvInfoStash:
         self.prefix = prefix
         self.xml = str()
         self.idx = idx # which simulation it is
-        
+
     def update_xml(self, xml_template):
         self.xml = xml_template
 
     def update_project_dir(self, project_dir):
         self.project_dir = project_dir
-        
+
     def replace_in_xml(self, key, replacements, quoted=False):
         """ Fill out xml template
-        
+
         key: Keyword to look for in xml
         replacements: list of objects (with __str__ implemented) to replace with OR a single object
         quoted: if True, adds quotes to the string
@@ -160,7 +160,7 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_para
     with open(xml_template_name, 'r') as xml_template_file:
         xml_template = xml_template_file.read()
 
-    # iterating over list of csv_info_stashes 
+    # iterating over list of csv_info_stashes
     for i, csv_info_stash in enumerate(csv_info_stashes):
         csv_info_stash.populate_xml(xml_template, project_dir) # fill out xml template
         xml_file_name = xml_dir + prefix + str(i+1) + ".xml"
