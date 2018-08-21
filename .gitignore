@@ -7,3 +7,4 @@ sim_data*
 *.pdf
 data*
 xmls*
+csvs_plots/*
