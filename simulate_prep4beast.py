@@ -164,6 +164,7 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, prior_para
     for i, csv_info_stash in enumerate(csv_info_stashes):
         csv_info_stash.populate_xml(xml_template, project_dir) # fill out xml template
         xml_file_name = xml_dir + prefix + str(i+1) + ".xml"
+        print xml_file_name, str(csv_info_stash.n_tips)
         csv_info_stash.write_xml(xml_file_name)
 
     return
@@ -178,7 +179,7 @@ def write_pbs(xml_dir, prefix, project_dir):
 
         with open("pbs_scripts/" + prefix + sim_n + ".PBS", "w") as pbs_file:
             pbs_file.write("#!/bin/bash\n#PBS -N beast_" + sim_n + \
-                           "\n#PBS -l nodes=1:ppn=1,walltime=06:00:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + project_dir + "biogeo.jar " + \
+                           "\n#PBS -l nodes=1:ppn=1,walltime=14:00:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + project_dir + "biogeo.jar " + \
                            project_dir + xml_dir + xml_file_name
             )
 
