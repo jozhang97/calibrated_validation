@@ -8,3 +8,4 @@ sim_data*
 data*
 xmls*
 csvs_plots/*
+beast_outputs/*

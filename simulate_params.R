@@ -22,19 +22,25 @@ get.95 <- function(a.vector) {
 
 sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     # Setting up arbitrary simulation values, and making objects
-    ps <- rlnorm(20000, meanlog=mu, sdlog=std) # plotting samples: default mean and sd in log scale, and =0 and 1, respectively
+    ps <- rlnorm(1000, meanlog=mu, sdlog=std) # plotting samples: default mean and sd in log scale, and =0 and 1, respectively
     s <- rlnorm(n.sim, meanlog=mu, sdlog=std) # actual samples we take from the prior
     p.df <- data.frame(ps); names(p.df) <- "value" # df for curve
     df <- data.frame(s); names(df) <- "value" # samples df
     r <- range(ps) # min and max from samples, for plotting
-    xaxis.max <- 3 # for plotting
+    xaxis.max <- 5 # for plotting
 
+    ## print(param.name)
+    ## print(mean(ps))
+
+    ## after ggtitle
+    ## stat_function(fun=dlnorm,
+    ##           args=list(r[1]:r[2], meanlog=mean(log(p.df$value)), sdlog=sd(log(p.df$value)))
+    ##           ) +
+
+    
     prior.samples.plot <- ggplot(df, aes(x=value)) +
         geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
         ggtitle(param.name) +
-        stat_function(fun=dlnorm,
-                      args=list(r[1]:r[2], meanlog=mean(log(p.df$value)), sdlog=sd(log(p.df$value)))
-                      ) +
         scale_x_continuous(breaks=seq(0, xaxis.max, by=1), limits=c(0, xaxis.max)) +
         xlab("Parameter value") + ylab("Density") + 
         theme(
@@ -51,6 +57,7 @@ sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
             axis.title.y = element_text(size=12)
         )
 
+    ## ggsave(file=paste0(output.dir, param.name, ".pdf"), plot=prior.samples.plot, width=3, height=3)
     ## prior.samples.plot # uncomment and run to see graph
     return(list(prior.samples.plot, df))
 }
@@ -118,7 +125,7 @@ plot.ntips <- function(my.df) {
             axis.text.y = element_text(color="black", size=10),
             axis.title.x = element_text(size=12),
             axis.title.y = element_text(size=12)
-        )
+        ) + xlim(0,250)
 
     ggsave(paste0(output.dir, "ntips.pdf"), plot=res, width=6, height=3)
 }
@@ -136,12 +143,14 @@ params.df$hdilower <- prior.hdi[[1]]
 params.df$hdiupper <- prior.hdi[[2]]
 
 ## simulating, storing and printing
+too.large <- 0
 simulated.trees <- 0
 for (i in 1:nrow(params.df)) {
     pars = unlist(params.df[i,1:6], use.names=FALSE)
-    phy = tree.bisse(pars, sim.time, max.taxa=1000, include.extinct=FALSE, x0=NA)
+    phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
 
     if (!is.null(phy)) {
+        if (length(phy$tip.state) > 250) { too.large = too.large + 1; next }
         simulated.trees = simulated.trees + 1
         cat(paste0("Simulated ",simulated.trees," trees.\r"))
         params.df[i,"tree"] = write.tree(phy)
@@ -155,7 +164,9 @@ for (i in 1:nrow(params.df)) {
             break
         }
     }
+    # else { cat("died\n") }
 }
+cat(paste0("Threw away ", too.large, " simulations.\n"))
 write.table(params.df[!is.na(params.df$"tree"),], file=paste0(output.dir, "data_param_tree.csv"),
           row.names=FALSE, quote=FALSE, sep="|")
 write.table(params.df[is.na(params.df$"tree"),], file=paste0(output.dir, "discarded_param_tree.csv"),
