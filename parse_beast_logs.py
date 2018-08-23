@@ -50,8 +50,8 @@ def summarize_validation(csv_dir, param_names1, param_names2):
             # for each param
             for true_param_name in true_params_list:
                 try:
-                    prior_lower = float(tokens[true_idxs["hdilower"]])
-                    prior_upper = float(tokens[true_idxs["hdiupper"]])
+                    prior_lower = float(tokens[true_idxs["hdilower."+true_param_name]])
+                    prior_upper = float(tokens[true_idxs["hdiupper."+true_param_name]])
                 except:
                     exit("Prior HDIs not found. Exiting...\n")
 

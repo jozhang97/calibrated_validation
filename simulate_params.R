@@ -9,10 +9,17 @@ args = commandArgs(trailingOnly=TRUE)
 output.dir <- args[1]
 prefix <- args[2]
 n.sim <- args[3]
-mu <- as.numeric(args[4])
-std <- as.numeric(args[5])
-sim.time <- as.numeric(args[6])
-param.names <- args[7:length(args)]
+mus <- args[4]
+stds <- args[5]
+param.names <- args[6] 
+sim.time <- as.numeric(args[7])
+
+mus.vec <- as.numeric(unlist(strsplit(mus, split=",")))
+stds.vec <- as.numeric(unlist(strsplit(stds, split=",")))
+param.names.vec <- unlist(strsplit(param.names, split=","))
+print(mus.vec)
+print(stds.vec)
+print(param.names.vec)
 
 # --- START: Prior sampling stuff --- #
 get.95 <- function(a.vector) {
@@ -27,11 +34,10 @@ sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     p.df <- data.frame(ps); names(p.df) <- "value" # df for curve
     df <- data.frame(s); names(df) <- "value" # samples df
     r <- range(ps) # min and max from samples, for plotting
-    xaxis.max <- 5 # for plotting
+    xaxis.max <- 3 # for plotting
 
-    ## print(param.name)
-    ## print(mean(ps))
-
+    print(paste0("Drawing param ", param.name, " with mean ", mu, " and stdev ", std))
+    print(mean(ps))
     ## after ggtitle
     ## stat_function(fun=dlnorm,
     ##           args=list(r[1]:r[2], meanlog=mean(log(p.df$value)), sdlog=sd(log(p.df$value)))
@@ -40,9 +46,8 @@ sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     
     prior.samples.plot <- ggplot(df, aes(x=value)) +
         geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
-        ggtitle(param.name) +
         scale_x_continuous(breaks=seq(0, xaxis.max, by=1), limits=c(0, xaxis.max)) +
-        xlab("Parameter value") + ylab("Density") + 
+        xlab(paste0(param.name, " value")) + ylab("Density") + 
         theme(
             panel.grid.minor = element_blank(),
             panel.border = element_blank(),
@@ -62,21 +67,22 @@ sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     return(list(prior.samples.plot, df))
 }
 
-sample.parameters <- function(output.dir, prefix, n.sim, mu, std, param.names, plot.flag) {
-    num_params = length(param.names)
+sample.parameters <- function(output.dir, prefix, n.sim, mus.vec, stds.vec, param.names.vec, plot.flag) {
+    num_params = length(param.names.vec)
     params = vector("list", length = num_params)
     plots = vector("list", length = num_params)
 
     for (i in 1 : num_params) {
-        param.name = param.names[i]
+        param.name = param.names.vec[i]
+        mu = mus.vec[i]
+        std = stds.vec[i]
         res = sample.parameter(output.dir, prefix, n.sim, mu, std, param.name)
         plots[[i]] = res[[1]]
         params[[i]] = res[[2]]
     }
 
     params.df = as.data.frame(params)
-    names(params.df) = param.names
-    save.path = paste(paste0(output.dir, prefix), "all_params.csv", sep="_")
+    names(params.df) = param.names.vec
 
     # printing all panels in single graph (png() won't work)
     if (plot.flag) {
@@ -101,9 +107,9 @@ if (length(args) < 6) {
   print("Not enough args. Output directory, Prefix, Num simulations, mu, sigma, parameter names")
 }
 
-params.df <- sample.parameters(output.dir, prefix, n.sim, mu, std, param.names, TRUE) # table with all true parameters for all simulations
-init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mu, std, param.names, FALSE) # table with all initialization (for .xml) parameters for all simulations
-write.table(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
+params.df <- sample.parameters(output.dir, prefix, n.sim, mus.vec, stds.vec, param.names.vec, TRUE) # table with all true parameters for all simulations
+## init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mu, std, param.names, FALSE) # table with all initialization (for .xml) parameters for all simulations
+## write.table(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
 # --- END: Prior sampling stuff --- #
 
 # --- START: Simulations --- #
@@ -137,10 +143,18 @@ params.df$ntips <- 0
 params.df$tipstates <- NA
 
 ## getting prior HDIs
-many.samples.from.prior <- rlnorm(20000, meanlog=mu, sdlog=std)
-prior.hdi = get.95(many.samples.from.prior)
-params.df$hdilower <- prior.hdi[[1]]
-params.df$hdiupper <- prior.hdi[[2]]
+many.samples.from.priors <- vector("list", length(param.names.vec))
+for (i in 1:length(param.names.vec)) {
+    many.samples.from.priors[[i]] <- rlnorm(20000, meanlog=mus.vec[i], sdlog=stds.vec[i])
+    prior.hdi = get.95(many.samples.from.priors[[i]])
+    lower.colname = paste0("hdilower.", param.names.vec[i])
+    upper.colname = paste0("hdiupper.", param.names.vec[i])
+    params.df = cbind(params.df, prior.hdi[[1]])
+    params.df = cbind(params.df, prior.hdi[[2]])
+    names(params.df)[c(ncol(params.df)-1,ncol(params.df))] = c(lower.colname, upper.colname)
+    params.df$lower.colname <- prior.hdi[[1]]
+    params.df$upper.colname <- prior.hdi[[2]]
+}
 
 ## simulating, storing and printing
 too.large <- 0
