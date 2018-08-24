@@ -108,8 +108,8 @@ if (length(args) < 6) {
 }
 
 params.df <- sample.parameters(output.dir, prefix, n.sim, mus.vec, stds.vec, param.names.vec, TRUE) # table with all true parameters for all simulations
-## init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mu, std, param.names, FALSE) # table with all initialization (for .xml) parameters for all simulations
-## write.table(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
+init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mus.vec, stds.vec, param.names.vec, FALSE) # table with all initialization (for .xml) parameters for all simulations
+write.table(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
 # --- END: Prior sampling stuff --- #
 
 # --- START: Simulations --- #
@@ -131,7 +131,7 @@ plot.ntips <- function(my.df) {
             axis.text.y = element_text(color="black", size=10),
             axis.title.x = element_text(size=12),
             axis.title.y = element_text(size=12)
-        ) + xlim(0,250)
+        ) + xlim(0,750)
 
     ggsave(paste0(output.dir, "ntips.pdf"), plot=res, width=6, height=3)
 }
@@ -164,7 +164,7 @@ for (i in 1:nrow(params.df)) {
     phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
 
     if (!is.null(phy)) {
-        if (length(phy$tip.state) > 250) { too.large = too.large + 1; next }
+        if (length(phy$tip.state) > 750) { too.large = too.large + 1; next }
         simulated.trees = simulated.trees + 1
         cat(paste0("Simulated ",simulated.trees," trees.\r"))
         params.df[i,"tree"] = write.tree(phy)
