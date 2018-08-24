@@ -152,8 +152,6 @@ for (i in 1:length(param.names.vec)) {
     params.df = cbind(params.df, prior.hdi[[1]])
     params.df = cbind(params.df, prior.hdi[[2]])
     names(params.df)[c(ncol(params.df)-1,ncol(params.df))] = c(lower.colname, upper.colname)
-    params.df$lower.colname <- prior.hdi[[1]]
-    params.df$upper.colname <- prior.hdi[[2]]
 }
 
 ## simulating, storing and printing
