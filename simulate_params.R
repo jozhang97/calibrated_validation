@@ -9,41 +9,49 @@ args = commandArgs(trailingOnly=TRUE)
 output.dir <- args[1]
 prefix <- args[2]
 n.sim <- args[3]
-mus <- args[4]
-stds <- args[5]
-param.names <- args[6] 
+param.names <- args[4]
+prior.dists <- args[5]
+prior.params <- args[6]
 sim.time <- as.numeric(args[7])
 
-mus.vec <- as.numeric(unlist(strsplit(mus, split=",")))
-stds.vec <- as.numeric(unlist(strsplit(stds, split=",")))
 param.names.vec <- unlist(strsplit(param.names, split=","))
-print(mus.vec)
-print(stds.vec)
-print(param.names.vec)
+prior.dists.vec <- unlist(strsplit(prior.dists, split=","))
+prior.params.vec <- unlist(strsplit(prior.params, split=";"))
 
 # --- START: Prior sampling stuff --- #
 get.95 <- function(a.vector) {
     res = hdi(a.vector, cresMass=.95)
-    return(c(res[[1]], res[[2]]))
+    return(c(res[[1]], res[[2]], mean(a.vector)))
 }
 
-sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
+sample.parameter <- function(output.dir, prefix, n.sim, param.name, prior.dist, prior.params, plot.flag) {
+## sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     # Setting up arbitrary simulation values, and making objects
-    ps <- rlnorm(1000, meanlog=mu, sdlog=std) # plotting samples: default mean and sd in log scale, and =0 and 1, respectively
-    s <- rlnorm(n.sim, meanlog=mu, sdlog=std) # actual samples we take from the prior
-    p.df <- data.frame(ps); names(p.df) <- "value" # df for curve
+    s = rep(0, n.sim)
+    ps = rep(0, 1000)
+    if (prior.dist == "lnorm") {
+        mu.std = unlist(strsplit(prior.params, split=","))
+        mu = as.numeric(mu.std[1]); std = as.numeric(mu.std[2])
+        s = rlnorm(n.sim, meanlog=mu, sdlog=std)
+        ps = rlnorm(1000, meanlog=mu, sdlog=std)
+    }
+    if (prior.dist == "exp") {
+        r = as.numeric(prior.params)
+        s = rexp(n.sim, rate=r)
+        ps = rexp(1000, rate=r)
+    }
     df <- data.frame(s); names(df) <- "value" # samples df
-    r <- range(ps) # min and max from samples, for plotting
     xaxis.max <- 3 # for plotting
 
-    print(paste0("Drawing param ", param.name, " with mean ", mu, " and stdev ", std))
-    print(mean(ps))
+    if (plot.flag) {
+        cat(paste0("Drawing param ", param.name, " from ", prior.dist, " prior (moments: ", prior.params, ")"))
+        cat(paste0(" \\ Prior mean: ", mean(ps), "\n"))
+    }
     ## after ggtitle
     ## stat_function(fun=dlnorm,
     ##           args=list(r[1]:r[2], meanlog=mean(log(p.df$value)), sdlog=sd(log(p.df$value)))
     ##           ) +
 
-    
     prior.samples.plot <- ggplot(df, aes(x=value)) +
         geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
         scale_x_continuous(breaks=seq(0, xaxis.max, by=1), limits=c(0, xaxis.max)) +
@@ -67,16 +75,18 @@ sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     return(list(prior.samples.plot, df))
 }
 
-sample.parameters <- function(output.dir, prefix, n.sim, mus.vec, stds.vec, param.names.vec, plot.flag) {
+sample.parameters <- function(output.dir, prefix, n.sim, param.names.vec, prior.dists.vec, prior.params.vec, plot.flag) {
     num_params = length(param.names.vec)
     params = vector("list", length = num_params)
     plots = vector("list", length = num_params)
 
     for (i in 1 : num_params) {
         param.name = param.names.vec[i]
-        mu = mus.vec[i]
-        std = stds.vec[i]
-        res = sample.parameter(output.dir, prefix, n.sim, mu, std, param.name)
+        ## mu = mus.vec[i]
+        ## std = stds.vec[i]
+        prior.dist = prior.dists.vec[i]
+        prior.params = prior.params.vec[i]
+        res = sample.parameter(output.dir, prefix, n.sim, param.name, prior.dist, prior.params, plot.flag)
         plots[[i]] = res[[1]]
         params[[i]] = res[[2]]
     }
@@ -107,8 +117,8 @@ if (length(args) < 6) {
   print("Not enough args. Output directory, Prefix, Num simulations, mu, sigma, parameter names")
 }
 
-params.df <- sample.parameters(output.dir, prefix, n.sim, mus.vec, stds.vec, param.names.vec, TRUE) # table with all true parameters for all simulations
-init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), mus.vec, stds.vec, param.names.vec, FALSE) # table with all initialization (for .xml) parameters for all simulations
+params.df <- sample.parameters(output.dir, prefix, n.sim, param.names.vec, prior.dists.vec, prior.params.vec, TRUE) # table with all true parameters for all simulations
+init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), param.names.vec, prior.dists.vec, prior.params.vec, FALSE) # table with all initialization (for .xml) parameters for all simulations
 write.table(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
 # --- END: Prior sampling stuff --- #
 
@@ -144,14 +154,27 @@ params.df$tipstates <- NA
 
 ## getting prior HDIs
 many.samples.from.priors <- vector("list", length(param.names.vec))
-for (i in 1:length(param.names.vec)) {
-    many.samples.from.priors[[i]] <- rlnorm(20000, meanlog=mus.vec[i], sdlog=stds.vec[i])
+for (i in 1:length(prior.params.vec)) {
+    prior.dist = prior.dists.vec[i]
+
+    if (prior.dist == "lnorm") {
+        mu.std = unlist(strsplit(prior.params.vec[i], split=","))
+        mu = as.numeric(mu.std[1]); std = as.numeric(mu.std[2])
+        many.samples.from.priors[[i]] = rlnorm(20000, meanlog=as.numeric(mu), sdlog=as.numeric(std))
+    }
+
+    else if (prior.dist == "exp") {
+        rate = prior.params.vec[i]
+        many.samples.from.priors[[i]] = rexp(20000, rate=as.numeric(rate))
+    }
+          
     prior.hdi = get.95(many.samples.from.priors[[i]])
     lower.colname = paste0("hdilower.", param.names.vec[i])
     upper.colname = paste0("hdiupper.", param.names.vec[i])
     params.df = cbind(params.df, prior.hdi[[1]])
     params.df = cbind(params.df, prior.hdi[[2]])
     names(params.df)[c(ncol(params.df)-1,ncol(params.df))] = c(lower.colname, upper.colname)
+    ## cat(paste0(param.names.vec[i], " hdilower ", prior.hdi[[1]], " hdiupper ", prior.hdi[[2]], " mean ", prior.hdi[[3]], "\n")) # verify they match samples
 }
 
 ## simulating, storing and printing
