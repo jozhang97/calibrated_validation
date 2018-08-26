@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--prefix", action="store", dest="prefix", default="", type=str, help="Prefix for result files.")
     parser.add_argument("-n", "--num-states", action="store", dest="numstates", default=2, type=int, help="Number of states")
     parser.add_argument("-s", "--speciation_events", action="store", dest="specevents", default="S", type=str, help="Speciation events used (e.g. SS,V,S)")
-    # Tweek the prior dist and params
+    # TODO Input the prior dist and params (or do it manually)
     args = parser.parse_args()
 
     spec_events = args.specevents.split(",")

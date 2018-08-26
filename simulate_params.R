@@ -182,7 +182,11 @@ too.large <- 0
 simulated.trees <- 0
 for (i in 1:nrow(params.df)) {
     pars = unlist(params.df[i,1:6], use.names=FALSE)
-    phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
+    if (length(param.names.vec) == 6) {
+        phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
+    } else {
+        phy = tree.classe(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
+    }
 
     if (!is.null(phy)) {
         if (length(phy$tip.state) > 750) { too.large = too.large + 1; next }

@@ -6,6 +6,56 @@ import argparse
 import re
 import numpy as np
 
+def  parse_param_event_files(prior_params_file_name, event_to_triplet):
+    # Preparing mapping
+    e2t_mapping = {}
+    with open(event_to_triplet) as e2t_file:
+        e2t = csv.reader(e2t_file, delimiter='|')
+        for i, event_triplet in enumerate(e2t):
+            if i == 0: continue
+            event_name, triplet = event_triplet
+            if event_name in e2t_mapping:
+                e2t_mapping[event_name].append(triplet)
+            else:
+                e2t_mapping[event_name] = [triplet]
+
+
+    # Read the table to write the param list
+    param_names = []
+    prior_dists = []
+    prior_params = []
+    with open(prior_params_file_name) as prior_params_file:
+        prior_params_r = csv.reader(prior_params_file, delimiter='|')
+        for i, prior in enumerate(prior_params_r):
+            if i == 0: continue
+            param_name, dist_type, moments = prior
+            if param_name.startswith("m") or param_name.startswith("q"):
+                param_names.append(param_name)
+                prior_dists.append(dist_type)
+                prior_params.append(moments)
+            else:
+                if param_name in e2t_mapping:
+                    for triplet in e2t_mapping[param_name]:
+                        spec_name = "l" + triplet.replace(",", "")
+                        param_names.append(spec_name)
+                        prior_dists.append(dist_type)
+                        prior_params.append(moments)
+
+    # Add unused speciation params
+    # ?
+
+    # Order the params
+    def sort_by_list(list_to_sort, index_lst):
+        ret = [list_to_sort[i] for i in index_lst]
+        return ret
+
+    idxs = np.argsort(param_names)
+    param_names = sort_by_list(param_names, idxs)
+    prior_dists = sort_by_list(prior_dists, idxs)
+    prior_params = sort_by_list(prior_params, idxs)
+
+    return param_names, prior_dists, prior_params
+
 def convert_to_species_list(tip_states):
     def construct_taxon_xml(tip_name):
         taxon = "<taxon id=\""
@@ -45,7 +95,7 @@ def stringfy_prior_params(prior_dist, prior_params, param_name, quoted=False):
         std = prior_params_list[1]
 
         if quoted: mu = "\"" + mu + "\""; std = "\"" + std + "\""
-        
+
         prior_param_string = "<distr id=\"LogNormal." + param_name + "\" spec=\"beast.math.distributions.LogNormalDistributionModel\" offset=\"0.0\" meanInRealSpace=\"false\">\n"
         prior_param_string += "\t\t<parameter name=\"M\" value=" + mu + " estimate=\"false\"/>\n"
         prior_param_string += "\t\t<parameter name=\"S\" value=" + std + " estimate=\"false\"/>\n\t  </distr>\n"
@@ -55,7 +105,7 @@ def stringfy_prior_params(prior_dist, prior_params, param_name, quoted=False):
         rate = prior_params_list[0]
 
         if quoted: rate = "\"" + rate + "\""
-        
+
         prior_param_string = "\t<distr id=\"Exponential." + param_name + "\" spec=\"beast.math.distributions.Exponential\" offset=\"0.0\" mean=" + rate + "/>\n"
 
     return prior_param_string
@@ -72,7 +122,7 @@ class CsvInfoStash:
         self.output_dir = output_dir
         self.prefix = prefix
         self.xml = str()
-        self.idx = idx # which simulation it is        
+        self.idx = idx # which simulation it is
 
     def update_xml(self, xml_template):
         self.xml = xml_template
@@ -87,7 +137,7 @@ class CsvInfoStash:
         replacements: list of objects (with __str__ implemented) to replace with OR a single object
         quoted: if True, adds quotes to the string
         """
-        
+
         replacements_str = str()
         if type(replacements) == type([]):
             for replacement in replacements:
@@ -118,7 +168,7 @@ class CsvInfoStash:
         """
         self.update_xml(xml_template) # initialize xml member
         self.update_project_dir(project_dir) # will add cluster path to BEAST output files if defined
-        
+
         self.replace_in_xml("[Lambda Prior Parameters]", stringfy_prior_params(self.prior_dists[:2], self.prior_params[:2], "Lambda", quoted=True)) # note that quoted applies to stringfy function
         self.replace_in_xml("[Mu Prior Parameters]", stringfy_prior_params(self.prior_dists[3:5], self.prior_params[3:5], "Mu", quoted=True))
         self.replace_in_xml("[FlatQMatrix Prior Parameters]", stringfy_prior_params(self.prior_dists[4:], self.prior_params[4:], "FlatQMatrix", quoted=True))
@@ -142,7 +192,7 @@ class CsvInfoStash:
 
 def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, pnames, prior_dists, prior_params):
     """ Call simulation pipeline (create .csvs and plots) """
-    
+
     output_path = os.path.join(output_dir, prefix)
     param_names = list()
 
@@ -150,10 +200,10 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, pname
     cmd = ["Rscript", "--vanilla", str(r_script), output_dir, prefix, str(n_sims), pnames, prior_dists, prior_params, str(sim_time)]
     print "\nR command call: " + " ".join(cmd) + "\n"
     subprocess.call(cmd)
-    
+
 def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, param_names, prior_dists, prior_params, project_dir):
     """ Parse .csv file into .xmls """
-    
+
     num_params = len(param_names)
     csv_info_stashes = list()
     csv_true = output_dir + "data_param_tree.csv"
@@ -210,11 +260,14 @@ if __name__ == "__main__":
     parser.add_argument("-st", "--sim-time", action="store", dest="simtime", default=10, type=float, help="Time to run simulation.")
     parser.add_argument("-pn", "--param-names", action="store", dest="pnames", default=None, type=str, help="Parameter names (order matters for means and stdevs of priors).")
     parser.add_argument("-pt", "--prior-distributions", action="store", dest="prior_dists", default=None, type=str, help="Prior distributions (one per parameter).")
-    parser.add_argument("-pp", "--prior-params", action="store", dest="prior_params", default=None, type=str, help="Parameters of prior distributions (sep is | between parameters, and comma within parameters).")    
+    parser.add_argument("-pp", "--prior-params", action="store", dest="prior_params", default=None, type=str, help="Parameters of prior distributions (sep is | between parameters, and comma within parameters).")
     parser.add_argument("-m", "--mu", action="store", dest="mu", default=None, type=str, help="Means of prior distns, in the order parameter names are passed.")
     parser.add_argument("-sd", "--std", action="store", dest="std", default=None, type=str, help="Standard deviations of prior distns, in the order parameter names are passed.")
     parser.add_argument("-xt", "--xml-template", action="store", dest="xmlt", default=None, type=str, help="Full path to template of .xml file.")
     parser.add_argument("-pd", "--project-dir", action="store", dest="projdir", default=None, type=str, help="Full path to calibration folder if -pbs.")
+    parser.add_argument("-ppf", "--prior-params-file", action="store", dest="prior_params_file", default=None, type=str, help="Full path to prior parameters file.")
+    parser.add_argument("-e2t", "--event-to-triplet", action="store", dest="event_to_triplet", default=None, type=str, help="Full path to event to triplet mapping file.")
+
     args = parser.parse_args()
 
     xml_str = str()
@@ -230,11 +283,20 @@ if __name__ == "__main__":
     if not os.path.exists(args.xmldir):
         os.makedirs(args.xmldir)
 
-    simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, args.pnames, args.prior_dists, args.prior_params) # calls R script, produces .csv files and plots
+    if args.prior_params_file and args.event_to_triplet:
+        param_names, prior_dists, prior_params = parse_param_event_files(args.prior_params_file, args.event_to_triplet)
+        pnames = ",".join(param_names)
+        pdists = ",".join(prior_dists)
+        pparams = ";".join(prior_params)
+    else:
+        pnames = args.pnames
+        pdists = args.prior_dists
+        pparams = args.prior_params
+        param_names = args.pnames.split(",")
+        prior_dists = args.prior_dists.split(",")
+        prior_params = args.prior_params.split(";")
 
-    param_names = args.pnames.split(",")
-    prior_dists = args.prior_dists.split(",")
-    prior_params = args.prior_params.split(";")
+    simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, pnames, pdists, pparams) # calls R script, produces .csv files and plots
 
     parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, param_names, prior_dists, prior_params, args.projdir) # parses .csv into .xml files
 
