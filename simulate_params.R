@@ -181,10 +181,12 @@ for (i in 1:length(prior.params.vec)) {
 too.large <- 0
 simulated.trees <- 0
 for (i in 1:nrow(params.df)) {
-    pars = unlist(params.df[i,1:6], use.names=FALSE)
     if (length(param.names.vec) == 6) {
+        pars = unlist(params.df[i,1:6], use.names=FALSE)
         phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
     } else {
+        # TODO Need to add the other parameters as 0 into pars
+        #pars = unlist(params.df[i, 1:])
         phy = tree.classe(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
     }
 
