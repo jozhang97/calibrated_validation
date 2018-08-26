@@ -12,11 +12,11 @@
     
     `` python generate_priors_table.py -n 4 -s SS,V,S -p classe ``
         
-            populate spec_event_to_triplet.csv by hand  
+        populate spec_event_to_triplet.csv by hand  
 
         Then run 
 
-    ``python simulate_prep4beast.py -od csvs_plots/ -p classe -xd bisse_xmls/ -xt classe_beast_template.xml -n 2000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/ -ppf classe_prior_params -e2t spec_event_to_triplet.csv``    
+    ``python simulate_prep4beast.py -od csvs_plots/ -p classe -xd bisse_xmls/ -xt classe_beast_template.xml -n 2000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/ -ppf classe_prior_params.csv -e2t spec_event_to_triplet.csv``    
     (Note above line does not work right now since xml not availbale)
 2) Submitting BEAST jobs (was done on cluster, I wrote a small python script to qsub all .pbs files. This step should produce a bunch of .log files that are put into beast_outputs/    
 
