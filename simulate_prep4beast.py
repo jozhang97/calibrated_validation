@@ -7,6 +7,10 @@ import re
 import numpy as np
 
 def  parse_param_event_files(prior_params_file_name, event_to_triplet):
+    """
+    Parses the prior params and event triplet files to supply the data in req data format.
+    Will convert the speciation event in prior params to the specific state changes in event_to_triplet
+    """
     # Preparing mapping
     e2t_mapping = {}
     with open(event_to_triplet) as e2t_file:

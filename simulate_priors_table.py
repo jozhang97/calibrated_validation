@@ -1,5 +1,6 @@
 # This script simulates a csv file with the following rows
 # param_name, distribution_type, moments (e.g. mu, sigma or mu)
+# For a given number of states and speciation event types
 import csv
 import argparse
 
