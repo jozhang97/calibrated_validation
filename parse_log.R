@@ -14,7 +14,7 @@ get.95 <- function(a.vector) {
 
 parse_log <- function(beast.output.folder, burnin.n, csv.folder) {
     header = ""
-    burnin.n = 500000
+    burnin.n = as.numeric(burnin.n)
     all.dfs = vector("list", 100)
     summaries = vector("list", 100)
     all.files = list.files(beast.output.folder)

@@ -15,14 +15,14 @@ csv.dir <- "/home/fkur465/Documents/uoa/calibrated_validation/csvs_plots/"
 make.regression.plot <- function(true.param.name, beast.param.name, true.df, beast.df) {
     true.name = as.character(true.param.name)
     beast.name = as.character(beast.param.name)
-    x = true.df[,names(true.df)==true.name]
+    x = as.numeric(true.df[,names(true.df)==true.name])
     min.x = min(x)
     max.x = max(x)
     y = as.numeric(beast.df[,names(beast.df)==beast.name])
     reg.df = data.frame(cbind(x,y))
 
-    plot = ggplot(reg.df, aes(x=x, y=y)) + geom_point(shape=20) + geom_smooth(method=lm, se=FALSE) + xlim(min.x,max.x) + ylim(min.x,max.x) +
-    xlab(paste0("Simulated ",true.name)) + ylab("Posterior mean") +
+    plot = ggplot(reg.df, aes(x=x, y=y)) + geom_point(shape=1) + xlim(min.x,max.x) + ylim(min.x,max.x) +
+    xlab(paste0("Simulated ",true.name)) + ylab("Posterior mean") + geom_abline(slope=1) +
     theme(
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
@@ -43,9 +43,9 @@ make.regression.plot <- function(true.param.name, beast.param.name, true.df, bea
 load(paste0(csv.dir, "hpds.RData"))
 true.df <- read.table(paste0(csv.dir, "data_param_tree.csv"), sep="|", head=TRUE)
 
-## large.idxs <- true.df[,"ntips"]>150
-## true.df <- true.df[large.idxs,]
-## df <- df[large.idxs,]
+large.idxs <- true.df[,"ntips"]>=200
+true.df <- true.df[large.idxs,]
+df <- df[large.idxs,]
 # segments(x0=0,y0=0,x1=45,y1=45)
 
 all.plots <- vector("list", nrow(name.df))

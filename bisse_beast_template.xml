@@ -95,7 +95,7 @@
         <log idref="prior"/>
     </logger>
 
-    <logger id="treelog.t:firsthalf" fileName="[Simulation tree file name]" logEvery="1000000" mode="tree">
+    <logger id="treelog.t:firsthalf" fileName="[Simulation tree file name]" logEvery="250000" mode="tree">
         <log id="TreeWithMetaDataLogger" spec="beast.evolution.tree.TreeWithMetaDataLogger" tree="@TreeParser"/>
     </logger>
   </run>

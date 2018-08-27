@@ -52,9 +52,9 @@ def stringfy_prior_params(prior_dist, prior_params, param_name, quoted=False):
 
     # exponential prior
     elif prior_dist == "exp":
-        rate = prior_params_list[0]
+        rate = 1/float(prior_params_list[0])
 
-        if quoted: rate = "\"" + rate + "\""
+        if quoted: rate = "\"" + str(rate) + "\""
         
         prior_param_string = "\t<distr id=\"Exponential." + param_name + "\" spec=\"beast.math.distributions.Exponential\" offset=\"0.0\" mean=" + rate + "/>\n"
 

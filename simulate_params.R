@@ -29,19 +29,23 @@ sample.parameter <- function(output.dir, prefix, n.sim, param.name, prior.dist, 
     # Setting up arbitrary simulation values, and making objects
     s = rep(0, n.sim)
     ps = rep(0, 1000)
+    xaxis.min = 0
+    xaxis.max = 0
     if (prior.dist == "lnorm") {
         mu.std = unlist(strsplit(prior.params, split=","))
         mu = as.numeric(mu.std[1]); std = as.numeric(mu.std[2])
         s = rlnorm(n.sim, meanlog=mu, sdlog=std)
         ps = rlnorm(1000, meanlog=mu, sdlog=std)
+        xaxis.min = min(ps) - 0.05
+        xaxis.max = max(ps) + 0.05
     }
     if (prior.dist == "exp") {
         r = as.numeric(prior.params)
         s = rexp(n.sim, rate=r)
         ps = rexp(1000, rate=r)
+        xaxis.max = max(ps)
     }
     df <- data.frame(s); names(df) <- "value" # samples df
-    xaxis.max <- 3 # for plotting
 
     if (plot.flag) {
         cat(paste0("Drawing param ", param.name, " from ", prior.dist, " prior (moments: ", prior.params, ")"))
@@ -54,7 +58,7 @@ sample.parameter <- function(output.dir, prefix, n.sim, param.name, prior.dist, 
 
     prior.samples.plot <- ggplot(df, aes(x=value)) +
         geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
-        scale_x_continuous(breaks=seq(0, xaxis.max, by=1), limits=c(0, xaxis.max)) +
+        scale_x_continuous(limits=c(xaxis.min, xaxis.max)) +
         xlab(paste0(param.name, " value")) + ylab("Density") + 
         theme(
             panel.grid.minor = element_blank(),
@@ -183,9 +187,10 @@ simulated.trees <- 0
 for (i in 1:nrow(params.df)) {
     pars = unlist(params.df[i,1:6], use.names=FALSE)
     phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
-
+    
     if (!is.null(phy)) {
         if (length(phy$tip.state) > 750) { too.large = too.large + 1; next }
+
         simulated.trees = simulated.trees + 1
         cat(paste0("Simulated ",simulated.trees," trees.\r"))
         params.df[i,"tree"] = write.tree(phy)
@@ -199,7 +204,7 @@ for (i in 1:nrow(params.df)) {
             break
         }
     }
-    # else { cat("died\n") }
+    ## else { cat("died\n") }
 }
 cat(paste0("Threw away ", too.large, " simulations.\n"))
 write.table(params.df[!is.na(params.df$"tree"),], file=paste0(output.dir, "data_param_tree.csv"),

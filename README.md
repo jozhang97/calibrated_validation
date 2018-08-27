@@ -7,6 +7,10 @@
 1) BiSSE: drawing parameter samples from prior, simulating trees and making .xmls (note that the value after -n will affect the results, even if setting the seed in R)
 
     ``python simulate_prep4beast.py -od csvs_plots/ -pt 'lnorm,lnorm,lnorm,lnorm,exp,exp' -pp '0.4,0.05;0.4,0.05;0.1,0.05;0.1,0.05;3;3' -pn l0,l1,m0,m1,q01,q10 -p bisse -xd bisse_xmls/ -xt bisse_beast_template.xml -n 2000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/``    
+
+    ``python simulate_prep4beast.py -od csvs_plots/ -pt 'exp,exp,exp,exp,exp,exp' -pp '20;20;80;80;80;80' -pn l0,l1,m0,m1,q01,q10 -p bisse -xd bisse_xmls/ -xt bisse_beast_template.xml -n 4000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/ -st 50``
+
+    ``python simulate_prep4beast.py -od csvs_plots/ -pt 'lnorm,lnorm,lnorm,lnorm,exp,exp' -pp '0.05,0.01;0.05,0.01;0.0025,0.01;0.0025,0.01;100;100' -pn l0,l1,m0,m1,q01,q10 -p bisse -xd bisse_xmls/ -xt bisse_beast_template.xml -n 2000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/ -st 50``    
     
 2) Submitting BEAST jobs (was done on cluster, I wrote a small python script to qsub all .pbs files. This step should produce a bunch of .log files that are put into beast_outputs/    
 
