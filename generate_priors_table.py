@@ -1,48 +1,40 @@
-# This script simulates a csv file with the following rows
-# param_name, distribution_type, moments (e.g. mu, sigma or mu)
 import csv
 import argparse
 
-def write_csv(priors_table, output_dir, prefix):
-    file_name = output_dir + prefix + "_prior_params.csv"
-    header = ["param_name", "dist_type", "moments"]
-    print("Writing to prior params to " + str(file_name))
-    with open(file_name, 'w') as fp:
-        writer = csv.writer(fp, delimiter='|')
-        writer.writerow(header)
-        for row in priors_table:
-            writer.writerow(row)
-    return
+def generate_priors_table(output_dir, prefix, num_states, speciation_events, prior_dists, prior_params):
+    """ Write _prior_params.csv so it can be read by simulate_prep4beast """
 
-def combine(obj_lst):
-    ret_str = ""
-    for obj in obj_lst:
-        ret_str += str(obj)
-    return ret_str
+    prior_dists_list = prior_dists.split(",")
+    prior_params_list = prior_params.split(";")
+    lambdas = speciation_events.split(",")
 
-def generate_priors_table(output_dir, prefix, num_states, speciation_events):
-    priors = []
-    for i in range(1, num_states+1):
-        priors.append([combine(["m", i]), "lnorm", "1,1"])  # mu
-        for j in range(1, num_states+1):
-            if i != j:
-                priors.append([combine(["q", i, j]), "lnorm", "1,0.5"])  # Q
+    priors = list() # where we'll store everything
+    
+    priors = ["m"+str(i)+"|"+prior_dists_list[0]+"|"+prior_params_list[0] for i in range(1,num_states+1)] # mu priors
+        
 
-    for event in speciation_events:
-        priors.append([event, "exp", "3"])
+    priors.extend([l+"|"+prior_dists_list[2+i]+"|"+prior_params_list[2+i] for i,l in enumerate(lambdas)]) # lambda priors; first two are death and transition parameters
+    
+    q_priors = list()
+    for i in range(num_states):
+        for j in range(num_states):
+            priors.extend(["q"+str(i)+str(j)+"|"+prior_dists_list[1]+"|"+prior_params_list[1]]) # q priors
 
-    write_csv(priors, output_dir, prefix)
+    with open(output_dir + prefix + "_prior_params.csv", "w") as priors_file:
+        priors_file.write("param_name|prior_dist|moments\n")
 
+        for p in priors:
+            priors_file.write(p + "\n")
 
 if __name__ == "__main__":
     # Note - default params will create BiSSE model
-    parser = argparse.ArgumentParser(prog="Generate priors script", description="Generates csv file to be used in simulate_prep4beast")
+    parser = argparse.ArgumentParser(prog="Generate priors script", description="Generates _prior_params.csv file to be used in simulate_prep4beast.")
     parser.add_argument("-od", "--output-dir", action="store", dest="outputdir", default="./", type=str, help="Full file path to directory where simulations and log files will be saved.")
     parser.add_argument("-p", "--prefix", action="store", dest="prefix", default="", type=str, help="Prefix for result files.")
-    parser.add_argument("-n", "--num-states", action="store", dest="numstates", default=2, type=int, help="Number of states")
-    parser.add_argument("-s", "--speciation_events", action="store", dest="specevents", default="S", type=str, help="Speciation events used (e.g. SS,V,S)")
-    # Tweek the prior dist and params
+    parser.add_argument("-n", "--num-states", action="store", dest="numstates", default=2, type=int, help="Number of states.")
+    parser.add_argument("-s", "--speciation_events", action="store", dest="spec_events", default="S", type=str, help="Speciation events used (e.g. SS,V,S)")
+    parser.add_argument("-pt", "--prior-distributions", action="store", dest="prior_dists", default=None, type=str, help="Prior distributions. The first two are for the death and transition parameters.")
+    parser.add_argument("-pp", "--prior-params", action="store", dest="prior_params", default=None, type=str, help="Parameters of prior distributions (sep is ; between parameters, and comma within parameters). First two are for the death and transition parameters.")
     args = parser.parse_args()
 
-    spec_events = args.specevents.split(",")
-    generate_priors_table(args.outputdir, args.prefix, args.numstates, spec_events)
+    generate_priors_table(args.outputdir, args.prefix, args.numstates, args.spec_events, args.prior_dists, args.prior_params)
