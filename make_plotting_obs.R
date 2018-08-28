@@ -8,21 +8,28 @@ library(sjPlot)
 
 true.names <- unlist(strsplit("l0,l1,m0,m1,q01,q10", split=","))
 beast.names <- unlist(strsplit("Lambda1,Lambda2,Mu1,Mu2,FlatQMatrix2,FlatQMatrix3", split=","))
-name.df <- data.frame(cbind(true.names, paste0("mean",beast.names)))
-names(name.df) <- c("true.names", "beast.names")
+name.df <- data.frame(cbind(true.names, paste0("mean",beast.names), paste0("lower",beast.names), paste0("upper",beast.names)))
+names(name.df) <- c("true.names", "beast.names", "beast.lower", "beast.upper")
 csv.dir <- "/home/fkur465/Documents/uoa/calibrated_validation/csvs_plots/"
 
-make.regression.plot <- function(true.param.name, beast.param.name, true.df, beast.df) {
+make.regression.plot <- function(true.param.name, beast.param.mean, beast.param.lower, beast.param.upper, true.df, beast.df, hpd=FALSE) {
     true.name = as.character(true.param.name)
-    beast.name = as.character(beast.param.name)
+    beast.name = as.character(beast.param.mean)
+    beast.lower = as.character(beast.param.lower)
+    beast.upper = as.character(beast.param.upper)
     x = as.numeric(true.df[,names(true.df)==true.name])
     min.x = min(x)
     max.x = max(x)
     y = as.numeric(beast.df[,names(beast.df)==beast.name])
-    reg.df = data.frame(cbind(x,y))
+    lower = as.numeric(beast.df[,names(beast.df)==beast.lower])
+    upper = as.numeric(beast.df[,names(beast.df)==beast.upper])
+    min.y = min(lower)
+    max.y = max(upper)
+    reg.df = data.frame(cbind(x,y,lower,upper))
+    print(reg.df)
 
-    plot = ggplot(reg.df, aes(x=x, y=y)) + geom_point(shape=1) + xlim(min.x,max.x) + ylim(min.x,max.x) +
-    xlab(paste0("Simulated ",true.name)) + ylab("Posterior mean") + geom_abline(slope=1) +
+    plot = ggplot() + geom_point(data=reg.df, mapping=aes(x=x, y=y), shape=20) + xlim(min.y,max.y) + ylim(min.y,max.y) +
+        xlab(paste0("Simulated ",true.name)) + ylab("Posterior mean") + geom_abline(slope=1, linetype="dotted") +
     theme(
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
@@ -37,6 +44,7 @@ make.regression.plot <- function(true.param.name, beast.param.name, true.df, bea
         axis.title.y = element_text(size=12)
     )
 
+    if (hpd) { plot = plot + geom_linerange(data=reg.df, mapping=aes(x=x, ymax=upper, ymin=lower), color="lightgray", alpha=.4) }
     return(plot)
 }
 
@@ -52,7 +60,7 @@ all.plots <- vector("list", nrow(name.df))
 for (r in 1:nrow(name.df)) {
     ## print(head(true.df[,c(-7,-8,-9)]))
     ## print(head(df))
-    all.plots[[r]] = make.regression.plot(name.df$true.names[r], name.df$beast.names[r], true.df, df)
+    all.plots[[r]] = make.regression.plot(name.df$true.names[r], name.df$beast.names[r], name.df$beast.lower[r], name.df$beast.upper[r], true.df, df, hpd=TRUE)
 }
 plot_grid(all.plots)
 
