@@ -51,10 +51,13 @@ make.regression.plot <- function(true.param.name, beast.param.mean, beast.param.
 load(paste0(csv.dir, "hpds.RData"))
 true.df <- read.table(paste0(csv.dir, "data_param_tree.csv"), sep="|", head=TRUE)
 
-large.idxs <- true.df[,"ntips"]>=200
-true.df <- true.df[large.idxs,]
-df <- df[large.idxs,]
-# segments(x0=0,y0=0,x1=45,y1=45)
+## large.idxs <- true.df[,"ntips"]>=100
+## true.df <- true.df[large.idxs,]
+## df <- df[large.idxs,]
+
+small.idxs <- true.df[,"ntips"]<=10
+true.df <- true.df[small.idxs,]
+df <- df[small.idxs,]
 
 all.plots <- vector("list", nrow(name.df))
 for (r in 1:nrow(name.df)) {

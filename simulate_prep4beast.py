@@ -6,59 +6,66 @@ import argparse
 import re
 import numpy as np
 
-def  parse_param_event_files(prior_params_file_name, event_to_triplet):
+def parse_param_event_files(prior_params_file_name, event_to_triplet):
     """
-    Parses the prior params and event triplet files to supply the data in req data format.
-    Will convert the speciation event in prior params to the specific state changes in event_to_triplet
+    Parse the prior params and event triplet files to supply simulate() with the data in req data format.
+    Will associate the correct prior parameters (depending on speciation event type) to each triplet, as specified in event triplet file.
     """
-    # Preparing mapping
-    e2t_mapping = {}
+
+    param_names, prior_dists, prior_params = list(), list(), list()
+
+    # preparing mapping
+    e2t_mapping = dict()
     with open(event_to_triplet) as e2t_file:
         e2t = csv.reader(e2t_file, delimiter='|')
+
         for i, event_triplet in enumerate(e2t):
-            if i == 0: continue
+            if i == 0: continue # ignore header
             event_name, triplet = event_triplet
-            if event_name in e2t_mapping:
+            triplet = "l_" + "".join(triplet.split(","))
+
+            try:
                 e2t_mapping[event_name].append(triplet)
-            else:
+            except:
                 e2t_mapping[event_name] = [triplet]
 
-
-    # Read the table to write the param list
-    param_names = []
-    prior_dists = []
-    prior_params = []
+    # reading file of param names and priors
     with open(prior_params_file_name) as prior_params_file:
-        prior_params_r = csv.reader(prior_params_file, delimiter='|')
-        for i, prior in enumerate(prior_params_r):
-            if i == 0: continue
-            param_name, dist_type, moments = prior
+        prior_params_line = csv.reader(prior_params_file, delimiter='|')
+
+        for i, param_info in enumerate(prior_params_line):
+            if i == 0: continue # ignore header
+            param_name, dist_type, moments = param_info
+
+            # death and transition parameters
             if param_name.startswith("m") or param_name.startswith("q"):
                 param_names.append(param_name)
                 prior_dists.append(dist_type)
                 prior_params.append(moments)
+
             else:
                 if param_name in e2t_mapping:
-                    for triplet in e2t_mapping[param_name]:
-                        spec_name = "l" + triplet.replace(",", "")
-                        param_names.append(spec_name)
+                    for l in e2t_mapping[param_name]:
+                        param_names.append(l)
                         prior_dists.append(dist_type)
                         prior_params.append(moments)
+                        
+    return param_names, prior_dists, prior_params
 
     # Add unused speciation params
     # ?
 
     # Order the params
-    def sort_by_list(list_to_sort, index_lst):
-        ret = [list_to_sort[i] for i in index_lst]
-        return ret
+#     def sort_by_list(list_to_sort, index_lst):
+#         ret = [list_to_sort[i] for i in index_lst]
+#         return ret
 
-    idxs = np.argsort(param_names)
-    param_names = sort_by_list(param_names, idxs)
-    prior_dists = sort_by_list(prior_dists, idxs)
-    prior_params = sort_by_list(prior_params, idxs)
+#     idxs = np.argsort(param_names)
+#     param_names = sort_by_list(param_names, idxs)
+#     prior_dists = sort_by_list(prior_dists, idxs)
+#     prior_params = sort_by_list(prior_params, idxs)
 
-    return param_names, prior_dists, prior_params
+#     return param_names, prior_dists, prior_params
 
 def convert_to_species_list(tip_states):
     def construct_taxon_xml(tip_name):
@@ -78,7 +85,7 @@ def convert_to_species_list(tip_states):
 def convert_to_flat_rate_matrix(q):
     # solve n * n - n = len(q)
     if len(q) == 2:  # BiSSE
-        return [1e-10, q[0], q[1], 1e-10]
+        return " ".join([q[0], q[1]])
     raise NotImplementedError
     #roots = np.roots(1, -1, len(q))
     #n = max(roots)  # not sure
@@ -115,9 +122,10 @@ def stringfy_prior_params(prior_dist, prior_params, param_name, quoted=False):
     return prior_param_string
 
 class CsvInfoStash:
-    def __init__(self, init_params, param_names, prior_dists, prior_params, tree, n_tips, tip_states, output_dir, prefix, idx):
+    def __init__(self, init_params, param_names, prior_dists, prior_params, tree, n_tips, tip_states, output_dir, prefix, idx, is_bisse):
         self.init_params = init_params
         self.param_names = param_names
+        self.n_states = len(param_names.split(",")); print "N states=" + str(self.n_states)
         self.prior_dists = prior_dists
         self.prior_params = prior_params
         self.tree = tree
@@ -127,6 +135,7 @@ class CsvInfoStash:
         self.prefix = prefix
         self.xml = str()
         self.idx = idx # which simulation it is
+        self.is_bisse = is_bisse
 
     def update_xml(self, xml_template):
         self.xml = xml_template
@@ -178,15 +187,19 @@ class CsvInfoStash:
         self.replace_in_xml("[FlatQMatrix Prior Parameters]", stringfy_prior_params(self.prior_dists[4:], self.prior_params[4:], "FlatQMatrix", quoted=True))
         self.replace_in_xml("[Tree in newick format]", self.tree)
         self.replace_in_xml("[List of species]", convert_to_species_list(self.tip_states))
-        self.replace_in_xml("[Initial transition rate values]", convert_to_flat_rate_matrix(self.init_params[4:6]))
-        self.replace_in_xml("[Initial lambda values]", self.init_params[0:2])
-        self.replace_in_xml("[Initial mu values]", self.init_params[2:4])
-        self.replace_in_xml("[Pi values]", "0.0 0.0 0.5 0.5")
         self.replace_in_xml("[Species=Trait State]", self.tip_states)
 
-        beast_output_path = "beast_outputs/"
+        if (self.is_bisse):
+            self.replace_in_xml("[Initial lambda values]", self.init_params[0:2])
+            self.replace_in_xml("[Initial mu values]", self.init_params[2:4])
+            self.replace_in_xml("[Initial transition rate values]", convert_to_flat_rate_matrix(self.init_params[4:6]))
+            self.replace_in_xml("[Pi values]", "0.0 0.0 0.5 0.5")
+        else:
+            pass
+
+        beast_output_path = self.prefix + "beast_outputs/"
         if self.project_dir:
-            beast_output_path = project_dir + "beast_outputs/"
+            beast_output_path = project_dir + self.prefix + "beast_outputs/"
         self.replace_in_xml("[Simulation log file name]", beast_output_path + self.prefix + str(self.idx) + "_sim.log")
         self.replace_in_xml("[Simulation tree file name]", beast_output_path + self.prefix + str(self.idx) + "_sim.trees")
 
@@ -199,13 +212,16 @@ def simulate(r_script_dir, output_dir, n_sims, is_bisse, prefix, sim_time, pname
 
     output_path = os.path.join(output_dir, prefix)
     param_names = list()
-
-    r_script = r_script_dir + "simulate_params.R"
+    r_script_name = str()
+    if is_bisse: r_script_name = "simulate_params.R"
+    else: r_script_name = "simulate_params_class.R"
+    
+    r_script = r_script_dir + r_script_name
     cmd = ["Rscript", "--vanilla", str(r_script), output_dir, prefix, str(n_sims), pnames, prior_dists, prior_params, str(sim_time)]
     print "\nR command call: " + " ".join(cmd) + "\n"
     subprocess.call(cmd)
 
-def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, param_names, prior_dists, prior_params, project_dir):
+def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, param_names, prior_dists, prior_params, project_dir, is_bisse):
     """ Parse .csv file into .xmls """
 
     num_params = len(param_names)
@@ -225,7 +241,7 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, param_name
             n_tips = true_row[num_params + 1]
             tip_states = true_row[num_params + 2]
 
-            csv_info_stash = CsvInfoStash(init_params, param_names, prior_dists, prior_params, tree, n_tips, tip_states, output_dir, prefix, i)
+            csv_info_stash = CsvInfoStash(init_params, param_names, prior_dists, prior_params, tree, n_tips, tip_states, output_dir, prefix, i, is_bisse)
             csv_info_stashes.append(csv_info_stash)
 
     with open(xml_template_name, 'r') as xml_template_file:
@@ -249,7 +265,7 @@ def write_pbs(xml_dir, prefix, project_dir):
 
         with open("pbs_scripts/" + prefix + sim_n + ".PBS", "w") as pbs_file:
             pbs_file.write("#!/bin/bash\n#PBS -N beast_" + sim_n + \
-                           "\n#PBS -l nodes=1:ppn=1,walltime=72:00:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + project_dir + "biogeo.jar " + \
+                           "\n#PBS -l nodes=1:ppn=1,walltime=36:00:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + project_dir + "biogeo.jar " + \
                            project_dir + xml_dir + xml_file_name
             )
 
@@ -264,7 +280,7 @@ if __name__ == "__main__":
     parser.add_argument("-st", "--sim-time", action="store", dest="simtime", default=10, type=float, help="Time to run simulation.")
     parser.add_argument("-pn", "--param-names", action="store", dest="pnames", default=None, type=str, help="Parameter names (order matters for means and stdevs of priors).")
     parser.add_argument("-pt", "--prior-distributions", action="store", dest="prior_dists", default=None, type=str, help="Prior distributions (one per parameter).")
-    parser.add_argument("-pp", "--prior-params", action="store", dest="prior_params", default=None, type=str, help="Parameters of prior distributions (sep is | between parameters, and comma within parameters).")
+    parser.add_argument("-pp", "--prior-params", action="store", dest="prior_params", default=None, type=str, help="Parameters of prior distributions (sep is ; between parameters, and comma within parameters).")
     parser.add_argument("-m", "--mu", action="store", dest="mu", default=None, type=str, help="Means of prior distns, in the order parameter names are passed.")
     parser.add_argument("-sd", "--std", action="store", dest="std", default=None, type=str, help="Standard deviations of prior distns, in the order parameter names are passed.")
     parser.add_argument("-xt", "--xml-template", action="store", dest="xmlt", default=None, type=str, help="Full path to template of .xml file.")
@@ -287,11 +303,15 @@ if __name__ == "__main__":
     if not os.path.exists(args.xmldir):
         os.makedirs(args.xmldir)
 
+    # CLaSSE
     if args.prior_params_file and args.event_to_triplet:
         param_names, prior_dists, prior_params = parse_param_event_files(args.prior_params_file, args.event_to_triplet)
         pnames = ",".join(param_names)
         pdists = ",".join(prior_dists)
         pparams = ";".join(prior_params)
+        print pnames, pdists, pparams
+
+    # BiSSE
     else:
         pnames = args.pnames
         pdists = args.prior_dists
@@ -300,11 +320,11 @@ if __name__ == "__main__":
         prior_dists = args.prior_dists.split(",")
         prior_params = args.prior_params.split(";")
 
-    simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, pnames, pdists, pparams) # calls R script, produces .csv files and plots
+    # simulate(args.rscriptsdir, args.outputdir, args.nsims, args.bisse, args.prefix, args.simtime, pnames, pdists, pparams) # calls R script, produces .csv files and plots
 
-    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, param_names, prior_dists, prior_params, args.projdir) # parses .csv into .xml files
+    # parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, param_names, prior_dists, prior_params, args.projdir, args.bisse) # parses .csv into .xml files
 
-    if args.projdir:
-        if not os.path.exists("pbs_scripts"):
-            os.makedirs("pbs_scripts")
-        write_pbs(args.xmldir, args.prefix, args.projdir)
+    # if args.projdir:
+    #     if not os.path.exists("pbs_scripts"):
+    #         os.makedirs("pbs_scripts")
+    #     write_pbs(args.xmldir, args.prefix, args.projdir)

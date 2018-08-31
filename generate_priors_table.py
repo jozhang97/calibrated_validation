@@ -18,7 +18,7 @@ def generate_priors_table(output_dir, prefix, num_states, speciation_events, pri
     q_priors = list()
     for i in range(num_states):
         for j in range(num_states):
-            priors.extend(["q"+str(i)+str(j)+"|"+prior_dists_list[1]+"|"+prior_params_list[1]]) # q priors
+            if i != j: priors.extend(["q"+str(i)+str(j)+"|"+prior_dists_list[1]+"|"+prior_params_list[1]]) # q priors
 
     with open(output_dir + prefix + "_prior_params.csv", "w") as priors_file:
         priors_file.write("param_name|prior_dist|moments\n")
