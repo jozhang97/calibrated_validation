@@ -27,6 +27,7 @@ get.95 <- function(a.vector) {
 sample.parameter <- function(output.dir, prefix, n.sim, param.name, prior.dist, prior.params, plot.flag) {
 ## sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     # Setting up arbitrary simulation values, and making objects
+    ignored.flag = FALSE
     s = rep(0, n.sim)
     ps = rep(0, 1000)
     xaxis.min = 0
@@ -39,44 +40,54 @@ sample.parameter <- function(output.dir, prefix, n.sim, param.name, prior.dist, 
         xaxis.min = min(ps) - 0.05
         xaxis.max = max(ps) + 0.05
     }
-    if (prior.dist == "exp") {
+    else if (prior.dist == "exp") {
         r = as.numeric(prior.params)
         s = rexp(n.sim, rate=r)
         ps = rexp(1000, rate=r)
         xaxis.max = max(ps)
     }
+    else if (prior.dist == "NA") {
+        ignored.flag = TRUE # parameters (from triplets) that are necessary to simulate under CLaSSE, but which we do not allow for
+        s = rep(0, 1000)
+    } 
     df <- data.frame(s); names(df) <- "value" # samples df
 
-    if (plot.flag) {
+    # only make plot of parameter (triplet) that we allowed for 
+    if (!ignored.flag & plot.flag) {
         cat(paste0("Drawing param ", param.name, " from ", prior.dist, " prior (moments: ", prior.params, ")"))
         cat(paste0(" \\ Prior mean: ", mean(ps), "\n"))
-    }
+    
     ## after ggtitle
     ## stat_function(fun=dlnorm,
     ##           args=list(r[1]:r[2], meanlog=mean(log(p.df$value)), sdlog=sd(log(p.df$value)))
     ##           ) +
 
-    prior.samples.plot <- ggplot(df, aes(x=value)) +
-        geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
-        scale_x_continuous(limits=c(xaxis.min, xaxis.max)) +
-        xlab(paste0(param.name, " value")) + ylab("Density") + 
-        theme(
-            panel.grid.minor = element_blank(),
-            panel.border = element_blank(),
-            panel.background = element_blank(),
-            plot.background = element_blank(),
-            plot.title = element_text(hjust=0.5),
-            axis.line = element_line(),
-            axis.ticks = element_line(color="black"),
-            axis.text.x = element_text(color="black", size=10),
-            axis.text.y = element_text(color="black", size=10),
-            axis.title.x = element_text(size=12),
-            axis.title.y = element_text(size=12)
-        )
+        prior.samples.plot <- ggplot(df, aes(x=value)) +
+            geom_histogram(aes(y=stat(density)), alpha=.4, bins=100) +
+            scale_x_continuous(limits=c(xaxis.min, xaxis.max)) +
+            xlab(paste0(param.name, " value")) + ylab("Density") + 
+            theme(
+                panel.grid.minor = element_blank(),
+                panel.border = element_blank(),
+                panel.background = element_blank(),
+                plot.background = element_blank(),
+                plot.title = element_text(hjust=0.5),
+                axis.line = element_line(),
+                axis.ticks = element_line(color="black"),
+                axis.text.x = element_text(color="black", size=10),
+                axis.text.y = element_text(color="black", size=10),
+                axis.title.x = element_text(size=12),
+                axis.title.y = element_text(size=12)
+            )
 
+        return(list(prior.samples.plot, df))
+    }
     ## ggsave(file=paste0(output.dir, param.name, ".pdf"), plot=prior.samples.plot, width=3, height=3)
     ## prior.samples.plot # uncomment and run to see graph
-    return(list(prior.samples.plot, df))
+    else {
+        ## cat(paste0("Did not plot ", param.name, ".\n"))
+        return(list(NA, df))
+    }
 }
 
 sample.parameters <- function(output.dir, prefix, n.sim, param.names.vec, prior.dists.vec, prior.params.vec, plot.flag) {
@@ -102,7 +113,7 @@ sample.parameters <- function(output.dir, prefix, n.sim, param.names.vec, prior.
     if (plot.flag) {
         cat("Plotting prior_samples.pdf\n")
         pdf(paste0(output.dir, "prior_samples.pdf"), width=6, height=7)
-        plot_grid(plots)
+        plot_grid(plots[!is.na(plots)])
         dev.off()
     }
 
@@ -145,7 +156,7 @@ plot.ntips <- function(my.df) {
             axis.text.y = element_text(color="black", size=10),
             axis.title.x = element_text(size=12),
             axis.title.y = element_text(size=12)
-        ) + xlim(0,750)
+        ) + xlim(0,1000)
 
     ggsave(paste0(output.dir, "ntips.pdf"), plot=res, width=6, height=3)
 }
@@ -159,6 +170,7 @@ params.df$tipstates <- NA
 ## getting prior HDIs
 many.samples.from.priors <- vector("list", length(param.names.vec))
 for (i in 1:length(prior.params.vec)) {
+    ignored = FALSE
     prior.dist = prior.dists.vec[i]
 
     if (prior.dist == "lnorm") {
@@ -171,34 +183,45 @@ for (i in 1:length(prior.params.vec)) {
         rate = prior.params.vec[i]
         many.samples.from.priors[[i]] = rexp(20000, rate=as.numeric(rate))
     }
-          
-    prior.hdi = get.95(many.samples.from.priors[[i]])
-    lower.colname = paste0("hdilower.", param.names.vec[i])
-    upper.colname = paste0("hdiupper.", param.names.vec[i])
-    params.df = cbind(params.df, prior.hdi[[1]])
-    params.df = cbind(params.df, prior.hdi[[2]])
-    names(params.df)[c(ncol(params.df)-1,ncol(params.df))] = c(lower.colname, upper.colname)
-    ## cat(paste0(param.names.vec[i], " hdilower ", prior.hdi[[1]], " hdiupper ", prior.hdi[[2]], " mean ", prior.hdi[[3]], "\n")) # verify they match samples
+
+    else if (prior.dist == "NA") { ignored = TRUE } 
+    
+    if (!ignored) {
+        prior.hdi = get.95(many.samples.from.priors[[i]])
+        lower.colname = paste0("hdilower.", param.names.vec[i])
+        upper.colname = paste0("hdiupper.", param.names.vec[i])
+        params.df = cbind(params.df, prior.hdi[[1]])
+        params.df = cbind(params.df, prior.hdi[[2]])
+        names(params.df)[c(ncol(params.df)-1,ncol(params.df))] = c(lower.colname, upper.colname)
+        ## cat(paste0(param.names.vec[i], " hdilower ", prior.hdi[[1]], " hdiupper ", prior.hdi[[2]], " mean ", prior.hdi[[3]], "\n")) # verify they match samples
+    }
 }
 
 ## simulating, storing and printing
 too.large <- 0
+too.small <- 0
 simulated.trees <- 0
+save(params.df, file="test_sim_classe.RData")
 for (i in 1:nrow(params.df)) {
-    pars = unlist(params.df[i,1:6], use.names=FALSE)
-    phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
+    pars = unlist(params.df[i,1:length(param.names.vec)], use.names=FALSE)
+    ## cat(names(params.df)[1:length(param.names.vec)]); cat("\n")
+    ## print(pars)
+    ## phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
     
     if (length(param.names.vec) == 6) {
-        pars = unlist(params.df[i,1:6], use.names=FALSE)
         phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
     } else {
-        # TODO Need to add the other parameters as 0 into pars
-        #pars = unlist(params.df[i, 1:])
-        phy = tree.classe(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
+        phy = tryCatch(tree.classe(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA),
+                       error = function(e) {
+                           cat("tree.classe() bombed\n."); return(NULL)
+                       }
+                       )
     }
 
     if (!is.null(phy)) {
-        if (length(phy$tip.state) > 750) { too.large = too.large + 1; next }
+        ## cat(paste0("N tips=", length(phy$tip.state), "\n"))
+        if (length(phy$tip.state) > 1000) { too.large = too.large + 1; next }
+        if (length(phy$tip.state) < 30) { too.small = too.small + 1; next }
 
         simulated.trees = simulated.trees + 1
         cat(paste0("Simulated ",simulated.trees," trees.\r"))
@@ -213,9 +236,9 @@ for (i in 1:nrow(params.df)) {
             break
         }
     }
-    ## else { cat("died\n") }
 }
-cat(paste0("Threw away ", too.large, " simulations.\n"))
+cat(paste0("Threw away ", too.large, " too large simulations.\n"))
+cat(paste0("Threw away ", too.small, " too small simulations.\n"))
 write.table(params.df[!is.na(params.df$"tree"),], file=paste0(output.dir, "data_param_tree.csv"),
           row.names=FALSE, quote=FALSE, sep="|")
 write.table(params.df[is.na(params.df$"tree"),], file=paste0(output.dir, "discarded_param_tree.csv"),

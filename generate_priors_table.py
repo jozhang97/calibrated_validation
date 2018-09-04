@@ -14,7 +14,7 @@ def generate_priors_table(output_dir, prefix, num_states, speciation_events, pri
         
 
     priors.extend([l+"|"+prior_dists_list[2+i]+"|"+prior_params_list[2+i] for i,l in enumerate(lambdas)]) # lambda priors; first two are death and transition parameters
-    
+
     q_priors = list()
     for i in range(num_states):
         for j in range(num_states):

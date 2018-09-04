@@ -18,17 +18,23 @@ make.regression.plot <- function(true.param.name, beast.param.mean, beast.param.
     beast.lower = as.character(beast.param.lower)
     beast.upper = as.character(beast.param.upper)
     x = as.numeric(true.df[,names(true.df)==true.name])
-    min.x = min(x)
+    min.x = 0
+    ## min.x = min(x)
     max.x = max(x)
+    n = length(x)
+    ## max.x = sort(x, partial=n-1)[n-2] # throwing out one outlier
     y = as.numeric(beast.df[,names(beast.df)==beast.name])
     lower = as.numeric(beast.df[,names(beast.df)==beast.lower])
     upper = as.numeric(beast.df[,names(beast.df)==beast.upper])
-    min.y = min(lower)
-    max.y = max(upper)
+    ## min.y = min(lower)
+    ## max.y = max(upper)
+    ## min.y = min(y)
+    min.y = 0
+    max.y = max(y)
     reg.df = data.frame(cbind(x,y,lower,upper))
     print(reg.df)
 
-    plot = ggplot() + geom_point(data=reg.df, mapping=aes(x=x, y=y), shape=20) + xlim(min.y,max.y) + ylim(min.y,max.y) +
+    plot = ggplot() + geom_point(data=reg.df, mapping=aes(x=x, y=y), shape=20) + xlim(min.x,max.y) + coord_cartesian(ylim=c(min.y, max.y)) +
         xlab(paste0("Simulated ",true.name)) + ylab("Posterior mean") + geom_abline(slope=1, linetype="dotted") +
     theme(
         panel.grid.minor = element_blank(),
@@ -51,9 +57,9 @@ make.regression.plot <- function(true.param.name, beast.param.mean, beast.param.
 load(paste0(csv.dir, "hpds.RData"))
 true.df <- read.table(paste0(csv.dir, "data_param_tree.csv"), sep="|", head=TRUE)
 
-## large.idxs <- true.df[,"ntips"]>=100
-## true.df <- true.df[large.idxs,]
-## df <- df[large.idxs,]
+large.idxs <- true.df[,"ntips"]>=150
+true.df <- true.df[large.idxs,]
+df <- df[large.idxs,]
 
 small.idxs <- true.df[,"ntips"]<=10
 true.df <- true.df[small.idxs,]
@@ -68,6 +74,8 @@ for (r in 1:nrow(name.df)) {
 plot_grid(all.plots)
 
 pdf(paste0(csv.dir, "true_vs_postmean.pdf"), width=6, height=7)
+pdf(paste0(csv.dir, "true_vs_postmean_large.pdf"), width=6, height=7)
+pdf(paste0(csv.dir, "true_vs_postmean_small.pdf"), width=6, height=7)
 plot_grid(all.plots)
 dev.off()
 

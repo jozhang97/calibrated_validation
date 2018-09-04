@@ -6,10 +6,10 @@
 
 1) BiSSE: drawing parameter samples from prior, simulating trees and making .xmls (note that the value after -n will affect the results, even if setting the seed in R)
 
-    ``python simulate_prep4beast.py -od csvs_plots/ -pt 'lnorm,lnorm,lnorm,lnorm,exp,exp' -pp '0.4,0.05;0.4,0.05;0.1,0.05;0.1,0.05;3;3' -pn l0,l1,m0,m1,q01,q10 -p bisse -xd bisse_xmls/ -xt bisse_beast_template.xml -n 2000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/``    
+    ``python simulate_prep4beast.py -od csvs_plots/ -pt 'exp,exp,exp,exp,exp,exp' -pp '20;20;80;80;100;100' -pn l0,l1,m0,m1,q01,q10 -p bisse -xd bisse_xmls/ -xt bisse_beast_template.xml -n 4000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/ -st 50 -b # Should ignore 10 too-large simulations, and have a n-tip median of 10; if you don't get this, something went wrong with the seeding and your beast_outputs won't match.``    
 
-    ``python simulate_prep4beast.py -od csvs_plots/ -pt 'exp,exp,exp,exp,exp,exp' -pp '20;20;80;80;100;100' -pn l0,l1,m0,m1,q01,q10 -p bisse -xd bisse_xmls/ -xt bisse_beast_template.xml -n 4000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/ -st 50 # Should ignore 10 too-large simulations, and have a n-tip median of 10; if you don't get this, something went wrong with the seeding and your beast_outputs won't match.``    
-
+    ``python simulate_prep4beast.py -od csvs_plots/ -pt 'exp,exp,exp,exp,exp,exp' -pp '30;30;100;100;100;100' -pn l0,l1,m0,m1,q01,q10 -p bisse -xd bisse_xmls/ -xt bisse_beast_template.xml -n 2000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/ -st 50 -b``    
+    
     NOTES:    
     - When any of the parameters is larger than 1, coverage will be fine, but the power analysis will show that the posterior mean has little to no correlation to the true value. Correlation occurs only when parameter values are smaller than 1-ish. 
 

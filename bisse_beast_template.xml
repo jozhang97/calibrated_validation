@@ -60,7 +60,7 @@
 
 	  <!-- e.g., 0.0 0.8 0.8 0.0 -->
 	  <InstantaneousRateMatrix id="InstantaneousRateMatrix" spec="biogeo.InstantaneousRateMatrix" NumberOfStates="2">
-	    <parameter id="FlatQMatrix" dimension="4" lower="0.0" minordimension="2" name="FlatQMatrix">[Initial transition rate values]</parameter>
+	    <parameter id="FlatQMatrix" dimension="2" lower="0.0" name="FlatQMatrix">[Initial transition rate values]</parameter>
 	  </InstantaneousRateMatrix>
 
 	  <!-- 0.222222 0.222222 -->
