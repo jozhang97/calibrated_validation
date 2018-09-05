@@ -94,7 +94,7 @@ sample.parameters <- function(output.dir, prefix, n.sim, param.names.vec, prior.
     num_params = length(param.names.vec)
     params = vector("list", length = num_params)
     plots = vector("list", length = num_params)
-
+    
     for (i in 1 : num_params) {
         param.name = param.names.vec[i]
         ## mu = mus.vec[i]
@@ -134,7 +134,7 @@ if (length(args) < 6) {
 
 params.df <- sample.parameters(output.dir, prefix, n.sim, param.names.vec, prior.dists.vec, prior.params.vec, TRUE) # table with all true parameters for all simulations
 init.params.df <- sample.parameters(output.dir, prefix, min(100, n.sim), param.names.vec, prior.dists.vec, prior.params.vec, FALSE) # table with all initialization (for .xml) parameters for all simulations
-write.table(init.params.df, file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
+write.table(init.params.df[1:100,], file=paste0(output.dir, "data_param_inits.csv"), row.names=FALSE, quote=FALSE, sep="|")
 # --- END: Prior sampling stuff --- #
 
 # --- START: Simulations --- #

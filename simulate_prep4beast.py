@@ -3,8 +3,8 @@ import os
 import subprocess
 import csv
 import argparse
-import re
 import numpy as np
+from utils_lib import *
 
 def parse_param_event_files(prior_params_file_name, event_to_triplet):
     """
@@ -15,7 +15,7 @@ def parse_param_event_files(prior_params_file_name, event_to_triplet):
     param_names, prior_dists, prior_params = list(), list(), list()
 
     # preparing mapping
-    e2t_mapping = dict()
+    e2t_dict = dict()
     with open(event_to_triplet) as e2t_file:
         e2t = csv.reader(e2t_file, delimiter='|')
 
@@ -25,9 +25,9 @@ def parse_param_event_files(prior_params_file_name, event_to_triplet):
             triplet = "l_" + "".join(triplet.split(","))
 
             try:
-                e2t_mapping[event_name].append(triplet)
+                e2t_dict[event_name].append(triplet)
             except:
-                e2t_mapping[event_name] = [triplet]
+                e2t_dict[event_name] = [triplet]
     
     # reading file of param names and priors
     with open(prior_params_file_name) as prior_params_file:
@@ -44,8 +44,8 @@ def parse_param_event_files(prior_params_file_name, event_to_triplet):
                 prior_params.append(moments)
 
             else:
-                if param_name in e2t_mapping:
-                    for l in e2t_mapping[param_name]:
+                if param_name in e2t_dict:
+                    for l in e2t_dict[param_name]:
                         param_names.append(l)
                         prior_dists.append(dist_type)
                         prior_params.append(moments)
@@ -56,22 +56,7 @@ def parse_param_event_files(prior_params_file_name, event_to_triplet):
     sorted_prior_params = [prior_params[unsorted_idx] for sorted_idx, unsorted_idx in list_of_idx_tuples]
     # print sorted_param_names
     # print sorted_prior_params
-    return sorted_param_names, sorted_prior_dists, sorted_prior_params
-
-def convert_to_species_list(tip_states):
-    def construct_taxon_xml(tip_name):
-        taxon = "<taxon id=\""
-        taxon += tip_name
-        taxon += "\" spec=\"Taxon\"/>"
-        return taxon
-
-    taxon_set = str()
-    for tip_state in tip_states.split(","):
-        tip_name = tip_state.split("=")[0]
-        taxon_set += construct_taxon_xml(tip_name)
-        taxon_set += "\n \t \t"
-
-    return taxon_set
+    return sorted_param_names, sorted_prior_dists, sorted_prior_params, e2t_dict
 
 def convert_to_flat_rate_matrix(q):
     # solve n * n - n = len(q)
@@ -82,38 +67,8 @@ def convert_to_flat_rate_matrix(q):
     #n = max(roots)  # not sure
     # TODO ... this is kinda annoying, keep looking for a library
 
-def stringfy_prior_params(prior_dist, prior_params, param_name, quoted=False):
-    """ Generate prior distribution parameter string to put in BEAST .xml """
-
-    # prior_dist = e.g. ["lnorm", "lnorm"]
-    # prior_params = e.g. ["0.1,0.05" "0.1,0.05"] they will always be repeated
-    prior_param_string = str()
-    prior_params_list = prior_params[0].split(",")
-    prior_dist = prior_dist[0].split(",")[0]
-
-    # lognormal prior
-    if prior_dist == "lnorm":
-        mu = prior_params_list[0]
-        std = prior_params_list[1]
-
-        if quoted: mu = "\"" + mu + "\""; std = "\"" + std + "\""
-
-        prior_param_string = "<distr id=\"LogNormal." + param_name + "\" spec=\"beast.math.distributions.LogNormalDistributionModel\" offset=\"0.0\" meanInRealSpace=\"false\">\n"
-        prior_param_string += "\t\t<parameter name=\"M\" value=" + mu + " estimate=\"false\"/>\n"
-        prior_param_string += "\t\t<parameter name=\"S\" value=" + std + " estimate=\"false\"/>\n\t  </distr>\n"
-
-    # exponential prior
-    elif prior_dist == "exp":
-        rate = 1/float(prior_params_list[0])
-
-        if quoted: rate = "\"" + str(rate) + "\""
-        
-        prior_param_string = "\t<distr id=\"Exponential." + param_name + "\" spec=\"beast.math.distributions.Exponential\" offset=\"0.0\" mean=" + rate + "/>\n"
-
-    return prior_param_string
-
 class CsvInfoStash:
-    def __init__(self, init_params, param_names, prior_dists, prior_params, tree, n_tips, tip_states, output_dir, prefix, idx, is_bisse, prior_params_file_name = None):
+    def __init__(self, init_params, param_names, prior_dists, prior_params, tree, n_tips, tip_states, output_dir, prefix, idx, is_bisse, prior_params_file_name = None, e2t_dict = None):
         self.init_params = init_params
         self.param_names = param_names
         self.prior_dists = prior_dists
@@ -127,6 +82,7 @@ class CsvInfoStash:
         self.idx = idx # which simulation it is
         self.is_bisse = is_bisse
         self.prior_params_file_name = prior_params_file_name
+        self.event_triplet_dict = e2t_dict
 
     def update_xml(self, xml_template):
         self.xml = xml_template
@@ -186,33 +142,85 @@ class CsvInfoStash:
             self.replace_in_xml("[Pi values]", "0.0 0.0 0.5 0.5")
 
         else:
-            print "using CLaSSE"
+            # replacing prior on death rates
             m_params_idxs = [idx for idx, p in enumerate(self.param_names) if p.startswith("m")]
             m_dists = [self.prior_dists[i] for i in m_params_idxs]
             m_params = [self.prior_params[i] for i in m_params_idxs]
             self.replace_in_xml("[Mu Prior Parameters]", stringfy_prior_params(m_dists, m_params, "Mu", quoted=True))
-            
+
+            # start: replacing prior on transition rates # 
             q_params_idxs = [idx for idx, p in enumerate(self.param_names) if p.startswith("q")]
             q_dists = [self.prior_dists[i] for i in q_params_idxs]
             q_params = [self.prior_params[i] for i in q_params_idxs]
             self.replace_in_xml("[FlatQMatrix Prior Parameters]", stringfy_prior_params(m_dists, m_params, "FlatQMatrix", quoted=True))
+            # end: replacing prior on transition rates # 
 
-            print q_dists, q_params
-
+            # start: dealing with info on starting values of transition rates
             n_states = len(m_params_idxs)
-            
             self.replace_in_xml("[Number of transition rates minus diagonals]", n_states*n_states-n_states)
             self.replace_in_xml("[Number of states]", n_states)
             self.replace_in_xml("[Twice the number of states]", n_states*2)
-            print self.param_names
-            
+            # end: dealing with info on starting values of transition rates
 
+            # start: replacing prior on lambdas in template #
+            event_dist_dict = dict()
+            with open(self.prior_params_file_name, "r") as prior_params_file:
+                for idx, line in enumerate(prior_params_file):
+                    if idx == 0: continue
+                    if line.startswith("m") or line.startswith("q") or line.startswith("IG"): continue
+                    event, dist, params = line.rstrip().split("|")
+                    event_dist_dict[event] = [dist, params]
+
+            self.replace_in_xml("[Sympatric Prior Parameters]", stringfy_prior_params(event_dist_dict["S"][0], event_dist_dict["S"][1], "SympatricRate", quoted=True)) # note that quoted applies to stringfy function
+            self.replace_in_xml("[Subsympatric Prior Parameters]", stringfy_prior_params(event_dist_dict["SS"][0], event_dist_dict["SS"][1], "SubsympatricRate", quoted=True))
+            self.replace_in_xml("[Vicariant Prior Parameters]", stringfy_prior_params(event_dist_dict["S"][0], event_dist_dict["V"][1], "VicariantRate", quoted=True))
+            # end: replacing prior on lambdas in template #
+
+            # start: filling out triplets #
+            event_type_list, parent_state_list, left_state_list, right_state_list = list(), list(), list(), list()
+            event_matching_triplet_for_init = dict()
+            for event, triplet_list in self.event_triplet_dict.items():
+                if event == "IGNORE": continue
+
+                for triplet_str in triplet_list:
+                    event_type_list.append(event)
+
+                    # filling out dict that will be used for initialization values in .xml
+                    if not event in event_matching_triplet_for_init:
+                        event_matching_triplet_for_init[event] = triplet_list[0]
+                        
+                    this_triplet_list = list(triplet_str.split("_")[1]) # does not work if there are more than 9 states!
+                    parent_state_list.append(this_triplet_list[0])
+                    left_state_list.append(this_triplet_list[1])
+                    right_state_list.append(this_triplet_list[2])
+            
+            self.replace_in_xml("[Cladogenetic triplets]", stringfy_triplets(parent_state_list, left_state_list, right_state_list, event_type_list))
+            # end: filling out triplets # 
+
+            # start: filling out initialization values #
+            init_csv_tokens = list()
+            with open(self.output_dir + "data_param_inits.csv", "r") as init_file:
+                for idx, line in enumerate(init_file):
+                    if idx == 0: # header is what we want
+                        init_csv_tokens = line.rstrip().split("|")
+
+            for event, info in event_matching_triplet_for_init.items():
+                idx = init_csv_tokens.index(info) # which col of init params to grab
+                init_value = self.init_params[idx]
+
+                if event == "S":
+
+                elif event == "SS":
+
+                elif event == "V":            
+            # end: filling out initialization values #
+            
         beast_output_path = self.prefix + "_beast_outputs/"
         if self.project_dir:
             beast_output_path = project_dir + self.prefix + "_beast_outputs/"
         self.replace_in_xml("[Simulation log file name]", beast_output_path + self.prefix + str(self.idx) + "_sim.log")
         self.replace_in_xml("[Simulation tree file name]", beast_output_path + self.prefix + str(self.idx) + "_sim.trees")
-
+        
     def write_xml(self, file_name):
         with open(file_name, "w") as f:
             f.write(self.xml)
@@ -229,7 +237,7 @@ def simulate(r_script_dir, output_dir, n_sims, prefix, sim_time, pnames, prior_d
     print "\nR command call: " + " ".join(cmd) + "\n"
     subprocess.call(cmd)
 
-def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, param_names, prior_dists, prior_params, project_dir, is_bisse):
+def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, param_names, prior_dists, prior_params, project_dir, is_bisse, e2t_dict):
     """ Parse .csv file into .xmls """
 
     num_params = len(param_names)
@@ -253,7 +261,7 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, param_name
             n_tips = true_row[num_params + 1]
             tip_states = true_row[num_params + 2]
 
-            csv_info_stash = CsvInfoStash(init_params, param_names, prior_dists, prior_params, tree, n_tips, tip_states, output_dir, prefix, i, is_bisse, csv_classe_prior_params)
+            csv_info_stash = CsvInfoStash(init_params, param_names, prior_dists, prior_params, tree, n_tips, tip_states, output_dir, prefix, i, is_bisse, csv_classe_prior_params, e2t_dict)
             csv_info_stashes.append(csv_info_stash)
 
     with open(xml_template_name, 'r') as xml_template_file:
@@ -266,32 +274,6 @@ def parse_simulations(output_dir, xml_dir, xml_template_name, prefix, param_name
         csv_info_stash.write_xml(xml_file_name)
 
     return
-
-def write_pbs(xml_dir, prefix, project_dir):
-    """ Write one .pbs script per .xml """
-
-    sim_n_regex = re.compile("[0-9]+")
-    xml_file_names = [f for f in os.listdir(xml_dir) if f.endswith(".xml")]
-    for xml_file_name in xml_file_names:
-        sim_n = re.findall(sim_n_regex, xml_file_name.split("_")[0])[0]
-
-        with open("pbs_scripts/" + prefix + sim_n + ".PBS", "w") as pbs_file:
-            pbs_file.write("#!/bin/bash\n#PBS -N beast_" + sim_n + \
-                           "\n#PBS -l nodes=1:ppn=1,walltime=50:00:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + project_dir + "biogeo.jar " + \
-                           project_dir + xml_dir + xml_file_name
-            )
-
-def natural_sort(l): 
-    convert = lambda text: int(text) if text.isdigit() else text.lower() 
-    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
-
-    return sorted(l, key = alphanum_key)
-
-def find_matching_index(sorted_list, unsorted_list):
-    unsorted_idxs = { element: index for index, element in enumerate(unsorted_list) }
-
-    return [(sorted_idx, unsorted_idxs[element])
-        for sorted_idx, element in enumerate(sorted_list)]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Simulation script", description="Script for performing well-calibrated validation of biogeo package.")
@@ -328,8 +310,9 @@ if __name__ == "__main__":
         os.makedirs(args.xmldir)
 
     # CLaSSE
+    e2t_dict = dict()
     if args.prior_params_file and args.event_to_triplet:
-        param_names, prior_dists, prior_params = parse_param_event_files(args.prior_params_file, args.event_to_triplet)
+        param_names, prior_dists, prior_params, e2t_dict = parse_param_event_files(args.prior_params_file, args.event_to_triplet)
         pnames = ",".join(param_names)
         pdists = ",".join(prior_dists)
         pparams = ";".join(prior_params)
@@ -346,7 +329,7 @@ if __name__ == "__main__":
 
     # simulate(args.rscriptsdir, args.outputdir, args.nsims, args.prefix, args.simtime, pnames, pdists, pparams) # calls R script, produces .csv files and plots
 
-    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, param_names, prior_dists, prior_params, args.projdir, args.bisse) # parses .csv into .xml files
+    parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, param_names, prior_dists, prior_params, args.projdir, args.bisse, e2t_dict) # parses .csv into .xml files
 
     # if args.projdir:
     #     if not os.path.exists("pbs_scripts"):

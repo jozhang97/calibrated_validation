@@ -7,7 +7,8 @@ library(ggplot2)
 library(sjPlot)
 
 true.names <- unlist(strsplit("l0,l1,m0,m1,q01,q10", split=","))
-beast.names <- unlist(strsplit("Lambda1,Lambda2,Mu1,Mu2,FlatQMatrix2,FlatQMatrix3", split=","))
+## beast.names <- unlist(strsplit("Lambda1,Lambda2,Mu1,Mu2,FlatQMatrix2,FlatQMatrix3", split=","))
+beast.names <- unlist(strsplit("Lambda1,Lambda2,Mu1,Mu2,FlatQMatrix1,FlatQMatrix2", split=","))
 name.df <- data.frame(cbind(true.names, paste0("mean",beast.names), paste0("lower",beast.names), paste0("upper",beast.names)))
 names(name.df) <- c("true.names", "beast.names", "beast.lower", "beast.upper")
 csv.dir <- "/home/fkur465/Documents/uoa/calibrated_validation/csvs_plots/"
@@ -57,13 +58,13 @@ make.regression.plot <- function(true.param.name, beast.param.mean, beast.param.
 load(paste0(csv.dir, "hpds.RData"))
 true.df <- read.table(paste0(csv.dir, "data_param_tree.csv"), sep="|", head=TRUE)
 
-large.idxs <- true.df[,"ntips"]>=150
-true.df <- true.df[large.idxs,]
-df <- df[large.idxs,]
+## large.idxs <- true.df[,"ntips"]>=150
+## true.df <- true.df[large.idxs,]
+## df <- df[large.idxs,]
 
-small.idxs <- true.df[,"ntips"]<=10
-true.df <- true.df[small.idxs,]
-df <- df[small.idxs,]
+## small.idxs <- true.df[,"ntips"]<=10
+## true.df <- true.df[small.idxs,]
+## df <- df[small.idxs,]
 
 all.plots <- vector("list", nrow(name.df))
 for (r in 1:nrow(name.df)) {
