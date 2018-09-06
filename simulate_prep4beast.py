@@ -155,11 +155,12 @@ class CsvInfoStash:
             self.replace_in_xml("[FlatQMatrix Prior Parameters]", stringfy_prior_params(m_dists, m_params, "FlatQMatrix", quoted=True))
             # end: replacing prior on transition rates # 
 
-            # start: dealing with info on starting values of transition rates
+            # start: dealing with info on starting values of transition rates, and pi
             n_states = len(m_params_idxs)
             self.replace_in_xml("[Number of transition rates minus diagonals]", n_states*n_states-n_states)
             self.replace_in_xml("[Number of states]", n_states)
             self.replace_in_xml("[Twice the number of states]", n_states*2)
+            self.replace_in_xml("[Pi values]", " ".join([str(0) for i in range(n_states)] + [str(float(1)/n_states) for i in range(n_states)]))
             # end: dealing with info on starting values of transition rates
 
             # start: replacing prior on lambdas in template #
@@ -197,7 +198,7 @@ class CsvInfoStash:
             self.replace_in_xml("[Cladogenetic triplets]", stringfy_triplets(parent_state_list, left_state_list, right_state_list, event_type_list))
             # end: filling out triplets # 
 
-            # start: filling out initialization values #
+            # start: filling out initialization lambda values #
             init_csv_tokens = list()
             with open(self.output_dir + "data_param_inits.csv", "r") as init_file:
                 for idx, line in enumerate(init_file):
@@ -209,11 +210,30 @@ class CsvInfoStash:
                 init_value = self.init_params[idx]
 
                 if event == "S":
-
+                    self.replace_in_xml("[Initial sympatric rate value]", self.init_params[idx])
+                                        
                 elif event == "SS":
-
-                elif event == "V":            
+                    self.replace_in_xml("[Initial subsympatric rate value]", self.init_params[idx])
+                    
+                elif event == "V":
+                    self.replace_in_xml("[Initial vicariant rate value]", self.init_params[idx])
             # end: filling out initialization values #
+
+            # start: filling out initialization mu and q-matrix values #
+            m_init_string = str()
+            q_init_string = str()
+            for idx, t in enumerate(init_csv_tokens):
+                if t.startswith("m"):
+                    m_init_string += self.init_params[idx]+" "
+
+                elif t.startswith("q"):
+                    q_init_string += self.init_params[idx]+" "
+
+            m_init_string.rstrip(" "); q_init_string.rstrip(" ")
+
+            self.replace_in_xml("[Initial mu values]", m_init_string)
+            self.replace_in_xml("[Initial transition rate values]", q_init_string)
+            # end: filling out initialization mu and pi values #
             
         beast_output_path = self.prefix + "_beast_outputs/"
         if self.project_dir:
@@ -331,7 +351,11 @@ if __name__ == "__main__":
 
     parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, param_names, prior_dists, prior_params, args.projdir, args.bisse, e2t_dict) # parses .csv into .xml files
 
-    # if args.projdir:
-    #     if not os.path.exists("pbs_scripts"):
-    #         os.makedirs("pbs_scripts")
-    #     write_pbs(args.xmldir, args.prefix, args.projdir)
+    if args.projdir:
+        if not os.path.exists(args.prefix + "_pbs_scripts"):
+            os.makedirs(args.prefix + "_pbs_scripts")
+        write_pbs(args.xmldir, args.prefix, args.projdir)
+
+        if not os.path.exists("shell_scripts"):
+            os.makedirs("shell_scripts")
+        write_sbatch(args.xmldir, args.prefix, args.projdir)
