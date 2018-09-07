@@ -13,6 +13,7 @@ param.names <- args[4]
 prior.dists <- args[5]
 prior.params <- args[6]
 sim.time <- as.numeric(args[7])
+model <- args[8]
 
 param.names.vec <- unlist(strsplit(param.names, split=","))
 prior.dists.vec <- unlist(strsplit(prior.dists, split=","))
@@ -208,9 +209,10 @@ for (i in 1:nrow(params.df)) {
     ## print(pars)
     ## phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
     
-    if (length(param.names.vec) == 6) {
+    if (model == "bisse") {
         phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
-    } else {
+    }
+    else if (model == "classe") {
         phy = tryCatch(tree.classe(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA),
                        error = function(e) {
                            cat("tree.classe() bombed\n."); return(NULL)
@@ -227,10 +229,12 @@ for (i in 1:nrow(params.df)) {
         cat(paste0("Simulated ",simulated.trees," trees.\r"))
         params.df[i,"tree"] = write.tree(phy)
         params.df[i,"ntips"] = length(phy$tip.state)
-        params.df[i,"tipstates"] = paste(
-            paste(names(phy$tip.state), phy$tip.state + 1, sep="="), # need to index by 1 
-            collapse=",")
 
+        if (model == "bisse") { offset = 1 } else { offset = 0 }
+        params.df[i,"tipstates"] = paste(
+            paste(names(phy$tip.state), phy$tip.state + offset, sep="="), # need to index by 1
+            collapse=",")
+        
         if (simulated.trees == 100) {
             plot.ntips(params.df[!is.na(params.df$"tree"),]) # plotting ntips.pdf
             break

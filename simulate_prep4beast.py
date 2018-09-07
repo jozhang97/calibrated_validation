@@ -245,15 +245,17 @@ class CsvInfoStash:
         with open(file_name, "w") as f:
             f.write(self.xml)
 
-def simulate(r_script_dir, output_dir, n_sims, prefix, sim_time, pnames, prior_dists, prior_params):
+def simulate(r_script_dir, output_dir, n_sims, prefix, sim_time, pnames, prior_dists, prior_params, is_bisse):
     """ Call simulation pipeline (create .csvs and plots) """
 
     output_path = os.path.join(output_dir, prefix)
     param_names = list()
+    if is_bisse: model = "bisse"
+    else: model = "classe"
     r_script_name = "simulate_params.R"
 
     r_script = r_script_dir + r_script_name
-    cmd = ["Rscript", "--vanilla", str(r_script), output_dir, prefix, str(n_sims), pnames, prior_dists, prior_params, str(sim_time)]
+    cmd = ["Rscript", "--vanilla", str(r_script), output_dir, prefix, str(n_sims), pnames, prior_dists, prior_params, str(sim_time), model]
     print "\nR command call: " + " ".join(cmd) + "\n"
     subprocess.call(cmd)
 
@@ -347,7 +349,7 @@ if __name__ == "__main__":
         prior_dists = args.prior_dists.split(",")
         prior_params = args.prior_params.split(";")
 
-    # simulate(args.rscriptsdir, args.outputdir, args.nsims, args.prefix, args.simtime, pnames, pdists, pparams) # calls R script, produces .csv files and plots
+    simulate(args.rscriptsdir, args.outputdir, args.nsims, args.prefix, args.simtime, pnames, pdists, pparams, args.bisse) # calls R script, produces .csv files and plots
 
     parse_simulations(args.outputdir, args.xmldir, args.xmlt, args.prefix, param_names, prior_dists, prior_params, args.projdir, args.bisse, e2t_dict) # parses .csv into .xml files
 
