@@ -74,7 +74,7 @@ def write_pbs(xml_dir, prefix, project_dir):
     for xml_file_name in xml_file_names:
         sim_n = re.findall(sim_n_regex, xml_file_name.split("_")[0])[0]
 
-        with open(prefix+ "_pbs_scripts/" + prefix + sim_n + ".PBS", "w") as pbs_file:
+        with open(prefix + "_pbs_scripts/" + prefix + sim_n + ".PBS", "w") as pbs_file:
             pbs_file.write("#!/bin/bash\n#PBS -N beast_" + sim_n + \
                            "\n#PBS -l nodes=1:ppn=1,walltime=70:00:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + project_dir + "biogeo.jar " + \
                            project_dir + xml_dir + xml_file_name
@@ -100,16 +100,18 @@ def write_sbatch(xml_dir, prefix, project_dir):
     for xml_file_name in xml_file_names:
         sim_n = re.findall(sim_n_regex, xml_file_name.split("_")[0])[0]
 
-        with open("shell_scripts/" + prefix + sim_n + ".sh", "w") as shell_file:
-            shell_file.write("#!/bin/bash\n#SBATCH -J beast_" + sim_n + "\n" +\
+        with open(prefix + "_shell_scripts/" + prefix + sim_n + ".sh", "w") as shell_file:
+            shell_file.write("#!/bin/bash -e\n#SBATCH -J beast_" + sim_n + "\n" +\
                              "#SBATCH -A nesi00390\n" + \
                              "#SBATCH --time=70:00:00\n" + \
                              "#SBATCH --mem-per-cpu=12288\n" + \
                              "#SBATCH --cpus-per-task=1\n" + \
+                             "#SBATCH --ntasks=1\n" + \
+                             "#SBATCH --hint=nomultithread\n" + \
                              "#SBATCH -D ./\n" + \
                              "#SBATCH -o beast_" + sim_n + "_out.txt\n" + \
                              "#SBATCH -e beast_" + sim_n + "_err.txt\n\n" + \
 
-                             "java -jar " + project_dir + "biogeo.jar " + \
+                             "srun /nesi/project/nesi00390/fkmendes/programs/jdk-10.0.2/bin/java -jar " + project_dir + "biogeo.jar " + \
                              project_dir + xml_dir + xml_file_name
             )
