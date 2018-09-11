@@ -25,6 +25,63 @@ get.95 <- function(a.vector) {
     return(c(res[[1]], res[[2]], mean(a.vector)))
 }
 
+classe.match.lambdas <- function(spec.event.to.triplet.csv) {
+    csv.tab = read.csv(spec.event.to.triplet.csv, sep="|", header=TRUE, stringsAsFactors=FALSE)
+    csv.tab = csv.tab[csv.tab$"event" != "IGNORE",]
+    for (i in 1:nrow(csv.tab)) {
+        csv.tab[i,"triplet"] = paste0("l_", gsub(",", "", csv.tab[i,"triplet"]))
+    }
+    ## matching.idx = with(csv.tab, match(csv.tab$event, unique(csv.tab$event)))
+    ## df = data.frame(csv.tab$"triplet", matching.idx)
+    return(csv.tab)
+}
+spec.event.triplets = classe.match.lambdas("/home/fkur465/Documents/uoa/calibrated_validation/spec_event_to_triplet.csv")
+
+# this function takes independent lambdas (e.g., Sympatric rates that come from the same prior but are not identical), but then makes them all the same based on their grouping coming from classe.match.lambdas
+classe.match.pars <- function(params.df.unmatched, matching.lambdas) {
+    ## cat("Before replacing\n")
+    ## print(params.df.unmatched)
+
+    # preparing container for unique events and the ONLY parameter value all cladogenetic events of that event type should share
+    events = unique(matching.lambdas$event)
+    event.triplet.to.paste.from = data.frame(rep(NA, length(events)),
+                                             rep(NA, length(events))
+                                             )
+    names(event.triplet.to.paste.from) = c("event", "triplet")
+
+    # now replacing
+    current = 0
+    for (triplet in names(params.df.unmatched)) {
+        # not doing anything on IGNORE
+        if (triplet %in% matching.lambdas$triplet) {
+            this.event = matching.lambdas[matching.lambdas$triplet==triplet,"event"]
+            
+            # here we add one triplet of each kind of event (this is what we'll replace the others with)
+            if (!(this.event %in% event.triplet.to.paste.from$"event")) {
+                current = current + 1
+                event.triplet.to.paste.from[current,"event"] = this.event
+                event.triplet.to.paste.from[current,"triplet"] = triplet
+            }
+
+            # if this event has been taken care of, now we replace it with the corresponding stored triplet
+            else {
+                this.event.idxs = event.triplet.to.paste.from$"event" == this.event
+                this.event.idxs[is.na(this.event.idxs)] = FALSE
+                triplet.to.paste.from = event.triplet.to.paste.from[this.event.idxs,"triplet"]
+                ## cat(paste0("Triplet to paste from ", triplet.to.paste.from, "\n"))
+                ## cat(paste0("Triplet being replaced ", triplet, "\n"))
+                this.triplet.idxs = names(params.df.unmatched)==triplet
+                idxs.paste.from = names(params.df.unmatched)==triplet.to.paste.from
+                params.df.unmatched[this.triplet.idxs] = params.df.unmatched[idxs.paste.from]
+            }
+        }
+    }
+    
+    ## cat("I'm done\n")
+    ## print(params.df.unmatched)
+    return(params.df.unmatched)
+}
+
 sample.parameter <- function(output.dir, prefix, n.sim, param.name, prior.dist, prior.params, plot.flag) {
 ## sample.parameter <- function(output.dir, prefix, n.sim, mu, std, param.name) {
     # Setting up arbitrary simulation values, and making objects
@@ -113,7 +170,7 @@ sample.parameters <- function(output.dir, prefix, n.sim, param.names.vec, prior.
     # printing all panels in single graph (png() won't work)
     if (plot.flag) {
         cat("Plotting prior_samples.pdf\n")
-        pdf(paste0(output.dir, "prior_samples.pdf"), width=6, height=7)
+        pdf(paste0(output.dir, "prior_samples.pdf"), width=16, height=16)
         plot_grid(plots[!is.na(plots)])
         dev.off()
     }
@@ -169,6 +226,7 @@ params.df$ntips <- 0
 params.df$tipstates <- NA
 
 ## getting prior HDIs
+## For CLaSSE: note that although I get the mean and HPD for l_111, l_222 and l_333 independently, for example, when parsing the posterior, I compare only the mean and HPD of l_111 with SympatricRate, so we can ignore the other ones
 many.samples.from.priors <- vector("list", length(param.names.vec))
 for (i in 1:length(prior.params.vec)) {
     ignored = FALSE
@@ -199,20 +257,26 @@ for (i in 1:length(prior.params.vec)) {
 }
 
 ## simulating, storing and printing
+## CLaSSE: note that to specify the model correctly, although I simulate l_111, l_222 and l_333 independently from the same prior (which produces different values for the 3) in simulate_parameters(), I replace l_222 and l_333 with the values from l_111 (the same is done for subsympatric rates), so I end up with a single simulated sympatric rate (i.e., the same rate is shared by l_111, l_222 and l_333)
 too.large <- 0
 too.small <- 0
 simulated.trees <- 0
 save(params.df, file="test_sim_classe.RData")
 for (i in 1:nrow(params.df)) {
-    pars = unlist(params.df[i,1:length(param.names.vec)], use.names=FALSE)
-    ## cat(names(params.df)[1:length(param.names.vec)]); cat("\n")
-    ## print(pars)
-    ## phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
-    
     if (model == "bisse") {
+        pars = unlist(params.df[i,1:length(param.names.vec)], use.names=FALSE)
         phy = tree.bisse(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA)
     }
+    
     else if (model == "classe") {
+        single.rates.for.each.event.param.df = classe.match.pars(params.df[i,1:length(param.names.vec)], spec.event.triplets)
+        
+        ## cat("Before\n")
+        ## print(params.df[i,1:length(param.names.vec)])
+        ## cat("After\n")
+        ## print(single.rates.for.each.event.param.df)
+        
+        pars = unlist(single.rates.for.each.event.param.df, use.names=FALSE)
         phy = tryCatch(tree.classe(pars, sim.time, max.taxa=10000, include.extinct=FALSE, x0=NA),
                        error = function(e) {
                            cat("tree.classe() bombed\n."); return(NULL)
