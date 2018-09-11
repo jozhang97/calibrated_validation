@@ -1,5 +1,6 @@
 import csv
 import argparse
+import os
 
 def generate_priors_table(output_dir, prefix, num_states, speciation_events, prior_dists, prior_params):
     """ Write _prior_params.csv so it can be read by simulate_prep4beast """
@@ -19,6 +20,9 @@ def generate_priors_table(output_dir, prefix, num_states, speciation_events, pri
     for i in range(num_states):
         for j in range(num_states):
             if i != j: priors.extend(["q"+str(i)+str(j)+"|"+prior_dists_list[1]+"|"+prior_params_list[1]]) # q priors
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     with open(output_dir + prefix + "_prior_params.csv", "w") as priors_file:
         priors_file.write("param_name|prior_dist|moments\n")
