@@ -6,12 +6,19 @@
 library(ggplot2)
 library(sjPlot)
 
+# BiSSE
 true.names <- unlist(strsplit("l0,l1,m0,m1,q01,q10", split=","))
-## beast.names <- unlist(strsplit("Lambda1,Lambda2,Mu1,Mu2,FlatQMatrix2,FlatQMatrix3", split=","))
 beast.names <- unlist(strsplit("Lambda1,Lambda2,Mu1,Mu2,FlatQMatrix1,FlatQMatrix2", split=","))
 name.df <- data.frame(cbind(true.names, paste0("mean",beast.names), paste0("lower",beast.names), paste0("upper",beast.names)))
 names(name.df) <- c("true.names", "beast.names", "beast.lower", "beast.upper")
 csv.dir <- "/home/fkur465/Documents/uoa/calibrated_validation/csvs_plots/"
+
+# ClaSSE
+true.names <- unlist(strsplit("l_111,l_313,l_312,m1,m2,m3,q01,q02,q10,q12,q20,q21", split=","))
+beast.names <- unlist(strsplit("SympatricRate,SubsympatricRate,VicariantRate,Mu1,Mu2,Mu3,FlatQMatrix1,FlatQMatrix2,FlatQMatrix3,FlatQMatrix4,FlatQMatrix5,FlatQMatrix6", split=","))
+name.df <- data.frame(cbind(true.names, paste0("mean",beast.names), paste0("lower",beast.names), paste0("upper",beast.names)))
+names(name.df) <- c("true.names", "beast.names", "beast.lower", "beast.upper")
+csv.dir <- "/home/fkur465/Documents/uoa/calibrated_validation/csvs_plots_classe/"
 
 make.regression.plot <- function(true.param.name, beast.param.mean, beast.param.lower, beast.param.upper, true.df, beast.df, hpd=FALSE) {
     true.name = as.character(true.param.name)

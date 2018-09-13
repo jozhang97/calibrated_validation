@@ -15,9 +15,13 @@
 
 2) CLaSSE: generate prior parameters    
 
-    ``python generate_priors_table.py -n 3 -od csvs_plots_classe/ -s SS,V,S -pt exp,exp,exp,exp,exp -pp '80;100;20;20;20' -p classe``    
+    ``python generate_priors_table.py -n 3 -od csvs_plots_classe/ -s SS,V,S -pt exp,exp,exp,exp,exp -pp '80;100;20;20;20' -p classe # death, transition, lambdas``    
         
-    ``python simulate_prep4beast.py -od csvs_plots_classe/ -p classe -xd classe_xmls/ -xt classe_beast_template.xml -n 2000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/ -ppf classe_prior_params.csv -e2t spec_event_to_triplet.csv``    
+    ``python simulate_prep4beast.py -od csvs_plots_classe/ -p classe -xd classe_xmls/ -xt classe_beast_template.xml -n 2000 -pd /N/u/fkmendes/Carbonate/Documents/uoa/calibrated_validation/ -ppf csvs_plots_classe/classe_prior_params.csv -e2t spec_event_to_triplet.csv -st 50``    
+
+    ``python generate_priors_table.py -n 3 -od csvs_plots_classe/ -s SS,V,S -pt exp,exp,exp,exp,exp -pp '80;20;20;20;20' -p classe``    
+
+    ``python simulate_prep4beast.py -od csvs_plots_classe/ -p classe -xd classe_xmls/ -xt classe_beast_template.xml -n 2000 -pd /nesi/project/nesi00390/fkmendes/calibrated_validation/ -ppf csvs_plots_classe/classe_prior_params.csv -e2t spec_event_to_triplet.csv -st 50``    
     
     (Note above line does not work right now since xml not availbale)    
     

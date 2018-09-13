@@ -54,8 +54,6 @@ def parse_param_event_files(prior_params_file_name, event_to_triplet):
     list_of_idx_tuples = find_matching_index(sorted_param_names, param_names) # (sorted_idx, unsorted_idx)
     sorted_prior_dists = [prior_dists[unsorted_idx] for sorted_idx, unsorted_idx in list_of_idx_tuples]
     sorted_prior_params = [prior_params[unsorted_idx] for sorted_idx, unsorted_idx in list_of_idx_tuples]
-    # print sorted_param_names
-    # print sorted_prior_params
     return sorted_param_names, sorted_prior_dists, sorted_prior_params, e2t_dict
 
 def convert_to_flat_rate_matrix(q):
@@ -152,7 +150,7 @@ class CsvInfoStash:
             q_params_idxs = [idx for idx, p in enumerate(self.param_names) if p.startswith("q")]
             q_dists = [self.prior_dists[i] for i in q_params_idxs]
             q_params = [self.prior_params[i] for i in q_params_idxs]
-            self.replace_in_xml("[FlatQMatrix Prior Parameters]", stringfy_prior_params(m_dists, m_params, "FlatQMatrix", quoted=True))
+            self.replace_in_xml("[FlatQMatrix Prior Parameters]", stringfy_prior_params(q_dists, q_params, "FlatQMatrix", quoted=True))
             # end: replacing prior on transition rates # 
 
             # start: dealing with info on starting values of transition rates, and pi
@@ -174,7 +172,7 @@ class CsvInfoStash:
 
             self.replace_in_xml("[Sympatric Prior Parameters]", stringfy_prior_params(event_dist_dict["S"][0], event_dist_dict["S"][1], "SympatricRate", quoted=True)) # note that quoted applies to stringfy function
             self.replace_in_xml("[Subsympatric Prior Parameters]", stringfy_prior_params(event_dist_dict["SS"][0], event_dist_dict["SS"][1], "SubsympatricRate", quoted=True))
-            self.replace_in_xml("[Vicariant Prior Parameters]", stringfy_prior_params(event_dist_dict["S"][0], event_dist_dict["V"][1], "VicariantRate", quoted=True))
+            self.replace_in_xml("[Vicariant Prior Parameters]", stringfy_prior_params(event_dist_dict["V"][0], event_dist_dict["V"][1], "VicariantRate", quoted=True))
             # end: replacing prior on lambdas in template #
 
             # start: filling out triplets #
@@ -358,6 +356,6 @@ if __name__ == "__main__":
             os.makedirs(args.prefix + "_pbs_scripts")
         write_pbs(args.xmldir, args.prefix, args.projdir)
 
-        if not os.path.exists("shell_scripts"):
-            os.makedirs("shell_scripts")
+        if not os.path.exists(args.prefix + "_shell_scripts"):
+            os.makedirs(args.prefix + "_shell_scripts")
         write_sbatch(args.xmldir, args.prefix, args.projdir)

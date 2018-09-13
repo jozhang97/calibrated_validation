@@ -12,7 +12,6 @@ def generate_priors_table(output_dir, prefix, num_states, speciation_events, pri
     
     priors = ["m"+str(i)+"|"+prior_dists_list[0]+"|"+prior_params_list[0] for i in range(1,num_states+1)] # mu priors
         
-
     priors.extend([l+"|"+prior_dists_list[2+i]+"|"+prior_params_list[2+i] for i,l in enumerate(lambdas)]) # lambda priors; first two are death and transition parameters
 
     q_priors = list()
@@ -25,6 +24,8 @@ def generate_priors_table(output_dir, prefix, num_states, speciation_events, pri
 
         for p in priors:
             priors_file.write(p + "\n")
+
+        priors_file.write("IGNORE|NA|NA")
 
 if __name__ == "__main__":
     # Note - default params will create BiSSE model
