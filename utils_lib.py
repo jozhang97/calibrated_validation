@@ -61,7 +61,7 @@ def stringfy_triplets(parent_state_list, left_state_list, right_state_list, even
         if event_type == "S": event_type = "SYMPATRY"
         if event_type == "SS": event_type = "SUBSYMPATRY"
         if event_type == "V": event_type = "VICARIANCE"
-        ith_triplet_string = "<CladoTriplets id=\"CladoTriplet" + str(i+1) + "\" spec=\"biogeo.CladoTriplet\" LeftChildState=\"" + left_state_list[i] + "\" ParentState=\"" + parent_state_list[i] + "\" RightChildState=\"" + right_state_list[i] + "\" SpeciationType=\"" + event_type + "\"/>\n\t    "
+        ith_triplet_string = "<cladoTriplets id=\"CladoTriplet" + str(i+1) + "\" spec=\"biogeo.CladoTriplet\" leftChildState=\"" + left_state_list[i] + "\" parentState=\"" + parent_state_list[i] + "\" rightChildState=\"" + right_state_list[i] + "\" speciationType=\"" + event_type + "\"/>\n\t    "
         triplet_string += ith_triplet_string
 
     return triplet_string.rstrip('\t    \n')
@@ -76,7 +76,7 @@ def write_pbs(xml_dir, prefix, project_dir):
 
         with open(prefix + "_pbs_scripts/" + prefix + sim_n + ".PBS", "w") as pbs_file:
             pbs_file.write("#!/bin/bash\n#PBS -N beast_" + sim_n + \
-                           "\n#PBS -l nodes=1:ppn=1,walltime=70:00:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + project_dir + "biogeo.jar " + \
+                           "\n#PBS -l nodes=1:ppn=1,walltime=70:00:00\n#PBS -M fkmendes@iu.edu\n#PBS -m abe\n\njava -jar " + project_dir + "SSE.jar " + \
                            project_dir + xml_dir + xml_file_name
             )
 
@@ -103,7 +103,7 @@ def write_sbatch(xml_dir, prefix, project_dir):
         with open(prefix + "_shell_scripts/" + prefix + sim_n + ".sh", "w") as shell_file:
             shell_file.write("#!/bin/bash -e\n#SBATCH -J beast_" + sim_n + "\n" +\
                              "#SBATCH -A nesi00390\n" + \
-                             "#SBATCH --time=70:00:00\n" + \
+                             "#SBATCH --time=350:00:00\n" + \
                              "#SBATCH --mem-per-cpu=12288\n" + \
                              "#SBATCH --cpus-per-task=1\n" + \
                              "#SBATCH --ntasks=1\n" + \
@@ -112,6 +112,6 @@ def write_sbatch(xml_dir, prefix, project_dir):
                              "#SBATCH -o beast_" + sim_n + "_out.txt\n" + \
                              "#SBATCH -e beast_" + sim_n + "_err.txt\n\n" + \
 
-                             "srun /nesi/project/nesi00390/fkmendes/programs/jdk-10.0.2/bin/java -jar " + project_dir + "biogeo.jar " + \
+                             "srun java -jar " + project_dir + "SSE.jar " + \
                              project_dir + xml_dir + xml_file_name
             )

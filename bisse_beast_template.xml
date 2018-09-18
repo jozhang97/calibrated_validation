@@ -2,7 +2,7 @@
 <beast namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood" required="BEAST v2.5.0" version="2.5">
 
   <run id="mcmc" spec="MCMC" chainLength="5000000">
-    <state id="state" storeEvery="50000">
+    <state id="state" storeEvery="5000">
       <stateNode idref="Lambda"/>
       <stateNode idref="Mu"/>
       <stateNode idref="FlatQMatrix"/>
@@ -45,32 +45,32 @@
       <!-- END prior -->
 
       <distribution id="likelihood" spec="util.CompoundDistribution" useThreads="true">
-	<distribution id="StateDependentSpeciationExtinctionProcess" spec="biogeo.StateDependentSpeciationExtinctionProcess" IncorporateCladogenesis="false">
-	  <TreeParser id="TreeParser" spec="beast.util.TreeParser" IsLabelledNewick="true" adjustTipHeights="false" newick="[Tree in newick format]" offset="0" singlechild="false"> <!-- e.g., ((Human:1.0,Chimp:1.0):1.0,Gorilla:2.0); -->
+	<distribution id="StateDependentSpeciationExtinctionProcess" spec="SSE.StateDependentSpeciationExtinctionProcess" incorporateCladogenesis="false">
+	  <tree id="FixedTree" spec="beast.util.TreeParser" IsLabelledNewick="true" adjustTipHeights="false" newick="[Tree in newick format]" offset="0" singlechild="false"> <!-- e.g., ((Human:1.0,Chimp:1.0):1.0,Gorilla:2.0); -->
 	    <taxonset id="TaxonSet" spec="TaxonSet">
 	        <!-- e.g., <taxon id="Sp1" spec="Taxon"/> -->
 	        [List of species]
 	    </taxonset>
-	  </TreeParser>
+	  </tree>
 
 	  <!-- e.g., "Sp1=1,Sp2=1,..." -->
-	  <TraitStash id="TraitStash" spec="biogeo.TraitStash" value="[Species=Trait State]" NumberOfStates="2">
+	  <traitStash id="TraitStash" spec="SSE.TraitStash" value="[Species=Trait State]" numberOfStates="2">
 	    <taxa idref="TaxonSet"/>
-	  </TraitStash>
+	  </traitStash>
 
 	  <!-- e.g., 0.0 0.8 0.8 0.0 -->
-	  <InstantaneousRateMatrix id="InstantaneousRateMatrix" spec="biogeo.InstantaneousRateMatrix" NumberOfStates="2">
-	    <parameter id="FlatQMatrix" dimension="2" lower="0.0" name="FlatQMatrix">[Initial transition rate values]</parameter>
-	  </InstantaneousRateMatrix>
+	  <instantaneousRateMatrix id="InstantaneousRateMatrix" spec="SSE.InstantaneousRateMatrix" numberOfStates="2">
+	    <parameter id="FlatQMatrix" dimension="2" lower="0.0" name="flatQMatrix">[Initial transition rate values]</parameter>
+	  </instantaneousRateMatrix>
 
 	  <!-- 0.222222 0.222222 -->
-	  <Lambda id="Lambda" dimension="2" spec="parameter.RealParameter">[Initial lambda values]</Lambda>
+	  <lambda id="Lambda" dimension="2" spec="parameter.RealParameter">[Initial lambda values]</lambda>
 
 	  <!-- e.g., 0.1 0.1 -->
-	  <Mu id="Mu" dimension="2" spec="parameter.RealParameter">[Initial mu values]</Mu>
+	  <mu id="Mu" dimension="2" spec="parameter.RealParameter">[Initial mu values]</mu>
 
 	  <!-- e.g., 0.0 0.0 0.5 0.5 -->
-	  <Pi id="Pi" dimension="4" spec="parameter.RealParameter">[Pi values]</Pi>
+	  <pi id="Pi" dimension="4" spec="parameter.RealParameter">[Pi values]</pi>
 	</distribution> <!-- END SSE -->
       </distribution> <!-- END Likelihood -->
     </distribution> <!-- END Posterior -->
@@ -95,8 +95,8 @@
         <log idref="prior"/>
     </logger>
 
-    <logger id="treelog.t:firsthalf" fileName="[Simulation tree file name]" logEvery="250000" mode="tree">
-        <log id="TreeWithMetaDataLogger" spec="beast.evolution.tree.TreeWithMetaDataLogger" tree="@TreeParser"/>
+    <logger id="treelog.t:firsthalf" fileName="[Simulation tree file name]" logEvery="5000000" mode="tree">
+        <log id="TreeWithMetaDataLogger" spec="beast.evolution.tree.TreeWithMetaDataLogger" tree="@FixedTree"/>
     </logger>
   </run>
 </beast>
