@@ -29,7 +29,7 @@ def stringfy_prior_params(prior_dist, prior_params, param_name, quoted=False):
         prior_params_list = prior_params[0].split(",")
         prior_dist_str = prior_dist[0].split(",")[0]
     else:
-        prior_params_list = prior_params
+        prior_params_list = [prior_params]
         prior_dist_str = prior_dist
         
     # lognormal prior

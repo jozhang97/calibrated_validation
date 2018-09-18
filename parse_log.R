@@ -12,7 +12,7 @@ get.95 <- function(a.vector) {
     return(c(res[[1]], res[[2]], mean(a.vector)))
 }
 
-parse_log <- function(beast.output.folder, burnin.n, csv.folder) {
+parse.log <- function(beast.output.folder, burnin.n, csv.folder) {
     header = ""
     burnin.n = as.numeric(burnin.n)
     all.dfs = vector("list", 100)
@@ -22,12 +22,13 @@ parse_log <- function(beast.output.folder, burnin.n, csv.folder) {
     count <- 1
     for (i in mixedsort(all.files)) {
         if (endsWith(i, ".log")) {
+            cat(paste0("Reading table ", i, "\n"))
             df = read.table(paste0(beast.output.folder,i), header=TRUE)
 	    w.o.burnin = (burnin.n/5000+1):nrow(df)
 	    summaries[[count]] = lapply(df[w.o.burnin,5:ncol(df)], get.95) # gets lower and upper of 95 HPD, and mean posterior
 	    if (count == 1) { header = c(as.vector(outer(c("lower", "upper", "mean"),names(summaries[[1]]), paste0)),"file") }
 	    summaries[[count]]$file = gsub("_sim.log", "", i)
-	    # all.dfs[[count]] = df
+	    all.dfs[[count]] = df
 	    count <- count+1
         }
     }
@@ -41,4 +42,4 @@ parse_log <- function(beast.output.folder, burnin.n, csv.folder) {
     save(df, file=paste0(csv.folder, "hpds.RData"))
 }
 
-parse_log(beast.output.folder, burnin.n, csv.folder)
+parse.log(beast.output.folder, burnin.n, csv.folder)

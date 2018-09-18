@@ -269,10 +269,12 @@ for (i in 1:nrow(params.df)) {
     }
     
     else if (model == "classe") {
-        single.rates.for.each.event.param.df = classe.match.pars(params.df[i,1:length(param.names.vec)], spec.event.triplets)
-        
         ## cat("Before\n")
         ## print(params.df[i,1:length(param.names.vec)])
+                
+        single.rates.for.each.event.param.df = classe.match.pars(params.df[i,1:length(param.names.vec)], spec.event.triplets)
+        params.df[i,1:length(param.names.vec)] = single.rates.for.each.event.param.df
+        
         ## cat("After\n")
         ## print(single.rates.for.each.event.param.df)
         
