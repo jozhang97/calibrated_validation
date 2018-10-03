@@ -21,22 +21,35 @@ lambda = 1/20
 mu = 1/80
 q = 1/20
 sim.time = 50
-pars = c(lambda, lambda, mu, mu, q, q)
+# pars = c(lambda, lambda, mu, mu, q, q)
+
+pars = c(0.2, 0.4, 0.001, 0.1, 0.1, 0.4)  # from RevBayes exp
 
 
 # Get a ground truth tree
-phy = tree.bisse(pars, sim.time, max.taxa=1000, include.extinct=FALSE, x0=NA)
+phy = tree.bisse(pars, max.taxa=22, x0=0)
 if (is.null(phy)) {
     print("bad tree")
     q()
 }
 tips = phy$tip.state
+print("Tree tips")
+print(tips)
+print("Tree in Newick format")
+write.tree(phy)
 ntips = length(tips)
 node.truth = phy$node.state
 
 
-# Calculate MLE on tree
-lik = make.bisse(phy, phy$tip.state)
+# Calculate likelyhood on tree
+sampling.f = c(1,1)
+lik = make.bisse(tree=phy, states=phy$tip.state, sampling.f=sampling.f, strict=FALSE)
+tree.lik = lik(pars=pars, root.p=NULL, intermediates=TRUE, condition.surv=FALSE) 
+# prior on root is the weighted average of D0 and D1, i.e., ROOT.OBS = D = D0 * (D0/(D0+D1)) + D1 * (D1/(D0+D1))
+print("Tree log likeyhood")
+print(tree.lik[1])
+
+# Calculate ancestral MLE
 asr.marginal = asr.marginal(lik, pars)
 
 
@@ -51,6 +64,7 @@ for (i in 1:phy$Nnode) {
 }
 
 acc = compare.states(node.truth, node.marginal, 1:phy$Nnode)
+print("Compare asr to ground truth")
 cat("Total accuracy: ", acc, "\n")
 
 
@@ -65,5 +79,10 @@ cat("Ancient accuracy: ", acc.ancient, "\n")
 acc.recent = compare.states(node.truth, node.marginal, node.recent)
 cat("Recent accuracy: ", acc.recent, "\n")
 
+
+# Write the results out
+print("asr marginal likelyhoods")
+print(asr.marginal)
+write.csv(asr.marginal, file = "diversitree_anc_states.csv")
 
 
