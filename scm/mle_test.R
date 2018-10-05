@@ -80,9 +80,12 @@ acc.recent = compare.states(node.truth, node.marginal, node.recent)
 cat("Recent accuracy: ", acc.recent, "\n")
 
 
-# Write the results out
+# Write the results out... merge the marginal calculates with their labels
 print("asr marginal likelyhoods")
-print(asr.marginal)
-write.csv(asr.marginal, file = "diversitree_anc_states.csv")
+asr.marginal.labeled = rbind(phy$node.label, asr.marginal)
+print(asr.marginal.labeled)
+write.csv(asr.marginal.labeled, file = "diversitree_anc_states.csv")
 
 
+#attributes(phy)
+#print(phy$edge)
