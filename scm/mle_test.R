@@ -94,7 +94,7 @@ cat("Recent accuracy: ", acc.recent, "\n")
 print("asr marginal likelyhoods")
 asr.marginal.labeled = rbind(phy$node.label, asr.marginal)
 print(asr.marginal.labeled)
-write.csv(asr.marginal.labeled, file = "diversitree_anc_states.csv")
+write.table(asr.marginal.labeled, file = "diversitree_anc_states.csv", row.names=FALSE, col.names=FALSE, sep=",")
 
 
 #attributes(phy)
