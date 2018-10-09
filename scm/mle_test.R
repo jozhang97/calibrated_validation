@@ -50,6 +50,10 @@ node.truth = phy$node.state
 
 print("Node truths")
 print(node.truth)
+node.truth.names = names(node.truth)
+node.truth = t(node.truth)
+node.truth = rbind(node.truth.names, node.truth)
+write.table(node.truth, file="node_truths.csv", sep=",", col.names=FALSE, row.names=FALSE)
 
 # Calculate likelyhood on tree
 sampling.f = c(1,1)
@@ -94,7 +98,8 @@ cat("Recent accuracy: ", acc.recent, "\n")
 print("asr marginal likelyhoods")
 asr.marginal.labeled = rbind(phy$node.label, asr.marginal)
 print(asr.marginal.labeled)
-write.table(asr.marginal.labeled, file = "diversitree_anc_states.csv", row.names=FALSE, col.names=FALSE, sep=",")
+dir = "div/"
+write.table(asr.marginal.labeled, file = paste0(dir, "diversitree_anc_states.csv"), row.names=FALSE, col.names=FALSE, sep=",")
 
 
 #attributes(phy)

@@ -49,7 +49,7 @@ def construct_post_comparison(csv_1_name, csv_2_name, output_file_name):
     ax.set_aspect('equal')
     ax.set_xlim(lims)
     ax.set_ylim(lims)
-    fig.savefig(output_file_name + '.png', dpi=300)
+    fig.savefig("plots/" + output_file_name + '.png', dpi=300)
 
 
 
