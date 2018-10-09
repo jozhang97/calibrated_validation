@@ -23,11 +23,19 @@ q = 1/20
 sim.time = 50
 # pars = c(lambda, lambda, mu, mu, q, q)
 
-pars = c(0.2, 0.4, 0.001, 0.1, 0.1, 0.4)  # from RevBayes exp
+pars = c(0.08, 0.08, 0.01, 0.01, 0.01, 0.01)  # from RevBayes exp
+names(pars) = c("l0", "l1", "m0", "m1", "q01", "q10")
 
+# Set up a handcrafted tree 
+#trstr = "((Human:2.0,Chimp:2.0)nd1:2.0,(Gorilla:2.0,Pizza:2.0)nd2:2.0)nd3:0.0;"
+#phy = read.tree(file="", text=trstr)
+#plot(phy)
+#states = c(1, 1, 0, 0)
+#names(states) = phy$tip.label
 
 # Get a ground truth tree
 phy = tree.bisse(pars, max.taxa=22, x0=0)
+plot(phy)
 if (is.null(phy)) {
     print("bad tree")
     q()
@@ -40,11 +48,13 @@ write.tree(phy)
 ntips = length(tips)
 node.truth = phy$node.state
 
+print("Node truths")
+print(node.truth)
 
 # Calculate likelyhood on tree
 sampling.f = c(1,1)
 lik = make.bisse(tree=phy, states=phy$tip.state, sampling.f=sampling.f, strict=FALSE)
-tree.lik = lik(pars=pars, root.p=NULL, intermediates=TRUE, condition.surv=FALSE) 
+tree.lik = lik(pars=pars, root=ROOT.FLAT, root.p=NULL, intermediates=TRUE, condition.surv=FALSE) 
 # prior on root is the weighted average of D0 and D1, i.e., ROOT.OBS = D = D0 * (D0/(D0+D1)) + D1 * (D1/(D0+D1))
 print("Tree log likeyhood")
 print(tree.lik[1])

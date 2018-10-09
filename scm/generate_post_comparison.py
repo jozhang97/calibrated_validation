@@ -26,7 +26,7 @@ def prepare_csv(csv_name):  # read and sort the nodes
     post = post[indices]
     return post
 
-def construct_post_comparison(csv_1_name, csv_2_name):
+def construct_post_comparison(csv_1_name, csv_2_name, output_file_name):
     csv_1 = prepare_csv(csv_1_name)
     csv_2 = prepare_csv(csv_2_name)
 
@@ -49,7 +49,7 @@ def construct_post_comparison(csv_1_name, csv_2_name):
     ax.set_aspect('equal')
     ax.set_xlim(lims)
     ax.set_ylim(lims)
-    fig.savefig('asr.png', dpi=300)
+    fig.savefig(output_file_name + '.png', dpi=300)
 
 
 
@@ -57,6 +57,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Generate asr validation", description="Generates ancestral state reconstruction figures that validate method.")
     parser.add_argument("-c1", "--csv-1-name", action="store", dest="csv1", default=None, type=str, help="CSV file containing post data.")
     parser.add_argument("-c2", "--csv-2-name", action="store", dest="csv2", default=None, type=str, help="CSV file containing post data.")
+    parser.add_argument("-o", "--output-name", action="store", dest="output", default="asr", type=str, help="Name of output file.")
     args = parser.parse_args()
 
-    construct_post_comparison(args.csv1, args.csv2)
+    construct_post_comparison(args.csv1, args.csv2, args.output)
