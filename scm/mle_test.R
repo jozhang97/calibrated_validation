@@ -2,6 +2,10 @@ library(ape)
 library(diversitree)
 set.seed(1234)
 
+args = commandArgs(TRUE)
+exp.name = args[1]
+dir = "div/"
+
 ## HELPERS
 # Compares the states in the truth and the reconstruction for given states/indices of interest
 compare.states = function(truth, pred, indices) {
@@ -23,7 +27,7 @@ q = 1/20
 sim.time = 50
 # pars = c(lambda, lambda, mu, mu, q, q)
 
-pars = c(0.08, 0.08, 0.01, 0.01, 0.01, 0.01)  # from RevBayes exp
+pars = c(0.2, 0.4, 0.01, 0.1, 0.1, 0.4)  # from RevBayes exp
 names(pars) = c("l0", "l1", "m0", "m1", "q01", "q10")
 
 # Set up a handcrafted tree 
@@ -53,7 +57,8 @@ print(node.truth)
 node.truth.names = names(node.truth)
 node.truth = t(node.truth)
 node.truth = rbind(node.truth.names, node.truth)
-write.table(node.truth, file="node_truths.csv", sep=",", col.names=FALSE, row.names=FALSE)
+node.file.name = paste0(dir, exp.name, "-node_truth.csv")
+write.table(node.truth, file=node.file.name, sep=",", col.names=FALSE, row.names=FALSE)
 
 # Calculate likelyhood on tree
 sampling.f = c(1,1)
@@ -98,8 +103,8 @@ cat("Recent accuracy: ", acc.recent, "\n")
 print("asr marginal likelyhoods")
 asr.marginal.labeled = rbind(phy$node.label, asr.marginal)
 print(asr.marginal.labeled)
-dir = "div/"
-write.table(asr.marginal.labeled, file = paste0(dir, "diversitree_anc_states.csv"), row.names=FALSE, col.names=FALSE, sep=",")
+asr.file.name = paste0(dir, exp.name, "-div_anc_states.csv")
+write.table(asr.marginal.labeled, file = asr.file.name, row.names=FALSE, col.names=FALSE, sep=",")
 
 
 #attributes(phy)
