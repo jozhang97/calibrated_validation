@@ -77,7 +77,7 @@ for (i in 1:length(phys)) {
     
     
     print("Tree tips")
-    tips
+    print(tips)
     print("Tree in Newick format")
     write.tree(phy)
     print("Node truths")
@@ -94,7 +94,7 @@ for (i in 1:length(phys)) {
     node.truth.save = t(node.truth.save)
     node.truth.save = rbind(node.truth.names, node.truth.save)
     node.file.name = paste0(dir, exp.name, i, "-node_truth.csv")
-    write.table(node.truth.save, file=node.file.name, sep=",", col.names=FALSE, row.names=FALSE)
+    write.table(node.truth.save, file=node.file.name, sep=",", col.names=FALSE, row.names=FALSE, quote=FALSE)
     
     
     tips.save = tips
@@ -102,12 +102,12 @@ for (i in 1:length(phys)) {
     tips.save = t(tips.save)
     tips.save = rbind(tips.save.names, tips.save)
     tips.file.name = paste0(dir, exp.name, i, "-tips.csv")
-    write.table(tips.save, file=tips.file.name, sep=",", col.names=FALSE, row.names=FALSE)
+    write.table(tips.save, file=tips.file.name, sep=",", col.names=FALSE, row.names=FALSE, quote=FALSE)
     
     
     beast.data = ""
-    for (i in 1:length(tips)) {
-        beast.data = paste0(beast.data, names(tips[i]), "=", tips[i], ",")
+    for (j in 1:length(tips)) {
+        beast.data = paste0(beast.data, names(tips[j]), "=", tips[j], ",")
     }   
     beast.data = substr(beast.data, 0, nchar(beast.data) - 1)
     beast.data.file.name = paste0(root, dir, exp.name, i, "-beast_str.txt")
