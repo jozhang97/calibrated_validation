@@ -12,3 +12,5 @@ csvs_plots*/*
 beast_outputs/*
 *.csv
 *.png
+*.txt
+*.tree
