@@ -8,16 +8,16 @@ dir = "div/"
 root = "/Users/jeff/Documents/Research/Phylogenetics/calibrated_validation/scm/"
 
 # Set parameters
-num.states = 4
+num.states = 8
 num.taxa = 22
-num.trees = 10
+num.trees = 100
 
 symp.prob = 1.0
 subsymp.prob = 1.0 / 6.0
 vic.prob = 1.0 / 6.0
 j.prob = 0
 
-birth.rate = 0.32222224
+birth.rate = 0.4
 death.rate = 0.1
 
 s.rate = symp.prob * birth.rate
@@ -62,13 +62,50 @@ pars[names(pars) == "q42"] = 0.01
 pars[names(pars) == "q43"] = 0.01
 
 
+if (num.states == 8) {
+    pars[names(pars) == "lambda555"] = s.rate
+    pars[names(pars) == "lambda666"] = s.rate
+
+    pars[names(pars) == "lambda556"] = j.rate
+    pars[names(pars) == "lambda665"] = j.rate
+
+    pars[names(pars) == "lambda765"] = v.rate
+    pars[names(pars) == "lambda847"] = v.rate
+
+    pars[names(pars) == "lambda775"] = ss.rate
+    pars[names(pars) == "lambda776"] = ss.rate
+    pars[names(pars) == "lambda884"] = ss.rate
+    pars[names(pars) == "lambda887"] = ss.rate
+
+    pars[names(pars) == "mu5"] = death.rate
+    pars[names(pars) == "mu6"] = death.rate
+    pars[names(pars) == "mu7"] = death.rate
+    pars[names(pars) == "mu8"] = death.rate
+
+    pars[names(pars) == "q51"] = 0.01
+    pars[names(pars) == "q57"] = 0.01
+    pars[names(pars) == "q61"] = 0.01
+    pars[names(pars) == "q67"] = 0.01
+    pars[names(pars) == "q75"] = 0.01
+    pars[names(pars) == "q76"] = 0.01
+    pars[names(pars) == "q84"] = 0.01
+    pars[names(pars) == "q87"] = 0.01
+}
+
+
 # Get ground truth trees
-phys = trees(pars, type="classe", max.taxa = num.taxa, x0=NA, n=num.trees)
+start.state = num.states
+phys = trees(pars, type="classe", max.taxa = num.taxa, x0=start.state, n=num.trees)
 
 if (is.null(phys)) {
     print("bad tree")
     q()
 }
+
+ifelse(!dir.exists(dir), dir.create(dir), FALSE)
+
+
+
 
 for (i in 1:length(phys)) {
     phy = phys[[i]]
@@ -81,7 +118,7 @@ for (i in 1:length(phys)) {
     print("Tree in Newick format")
     write.tree(phy)
     print("Node truths")
-    node.truth
+    print(node.truth)
     
     
     tree.file.name = paste0(dir, exp.name, i, ".tree")
@@ -115,8 +152,12 @@ for (i in 1:length(phys)) {
     
     
     # Calculate likelyhood on tree
-    sampling.f = c(1,1,1,1)
-    lik = make.classe(tree=phy, states=phy$tip.state, sampling.f=sampling.f, strict=FALSE, k=4)
+    if (num.states == 4) {
+        sampling.f = c(1,1,1,1)
+    } else if (num.states == 8) {
+        sampling.f = c(1,1,1,1,1,1,1,1)
+    }
+    lik = make.classe(tree=phy, states=phy$tip.state, sampling.f=sampling.f, strict=FALSE, k=num.states)
     tree.lik = lik(pars=pars, root=ROOT.FLAT, root.p=NULL, intermediates=TRUE, condition.surv=FALSE) 
     # prior on root is the weighted average of D0 and D1, i.e., ROOT.OBS = D = D0 * (D0/(D0+D1)) + D1 * (D1/(D0+D1))
     print("Tree log likeyhood")
