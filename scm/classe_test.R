@@ -4,11 +4,12 @@ library(diversitree)
 
 args = commandArgs(TRUE)
 exp.name = args[1]
+num.states = as.integer(args[2])  # only accepts 4 or 8 right now
+
 dir = "div/"
 root = "/Users/jeff/Documents/Research/Phylogenetics/calibrated_validation/scm/"
 
 # Set parameters
-num.states = 8
 num.taxa = 22
 num.trees = 100
 

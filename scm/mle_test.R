@@ -1,11 +1,12 @@
 library(ape)
 library(diversitree)
-#set.seed(1234)
+set.seed(1234)
 
 args = commandArgs(TRUE)
 exp.name = args[1]
 dir = "div/"
 root = "/Users/jeff/Documents/Research/Phylogenetics/calibrated_validation/scm/"
+ifelse(!dir.exists(dir), dir.create(dir), FALSE)
 
 ## HELPERS
 # Compares the states in the truth and the reconstruction for given states/indices of interest
@@ -29,9 +30,9 @@ sim.time = 50
 # pars = c(lambda, lambda, mu, mu, q, q)
 
 #pars = c(0.5, 0.4, 0.02, 0.1, 0.1, 0.02)  # from RevBayes exp
-#pars = c(0.2, 0.4, 0.01, 0.1, 0.1, 0.4)
 #pars = c(0.04, 0.08, 0.01, 0.02, 0.04, 0.01)
-pars = c(0.08, 0.08, 0.01, 0.01, 0.01, 0.01)
+#pars = c(0.08, 0.08, 0.01, 0.01, 0.01, 0.01)
+pars = c(0.2, 0.4, 0.01, 0.1, 0.1, 0.4)
 n.taxa = 22
 #n.taxa = 5
 names(pars) = c("l0", "l1", "m0", "m1", "q01", "q10")
